@@ -1,0 +1,45 @@
+Peripheral Vision Movement Tracking Test Prompt
+
+
+Write a javascript canvas test of peripheral vision.
+
+The canvas should be the size of the whole browser window (visible room only). All measurements / constants should be relative to the visible width and height.
+
+The peripheral vision test consists of a slowly moving (speed dependent on configured difficulty level (configuration in a modal before starting the game / test) red ball. A black dot should be placed in the center of the canvas, such that the user can stare at the black dot while they attempt to attend to the red dot in their peripheral vision. The user should place their head and eyes such that their field of vision ends at the edges of the screen.
+
+The user's goal is to, while keeping their eyes focused on the center black dot, keep their mouse positioned as close as they can to the red dot, while the red dot is moving.
+
+The red dot should move smoothly in approximately a circle around the black dot (farther away depending on the difficulty -- the approximate radius from the red dot should be configurable with a slider in the configuration modal). It should deviate from the circle by a random number up to a configurable amount (basically, it should wiggle around a lesser and larger radius at it moves in an rough circle). It should randomly change clockwise / counter-clockwise direction after a random amount of time (and the minimum / maximum amount of random time should be configurable).
+
+
+The score should be calculated via the euclidean distance from the mouse to the center of the red dot, with a reading taken every 100ms. Draw a red line from the mouse to the center of the red dot, whose opacity is proportional to the distance (with opaque being very good score (low distance) and transparent being very bad (if the distance is more than half the width of the screen, then the line should be completely transparent)).
+
+The duration of the exercise should be configurable in seconds. During the exercise, show the number of seconds as it counts down. The score should be finally tabulated as the average reading every 100ms over the entire exercise. When the exercise is over, we should show the modal again, but this time, it should show the score.
+
+
+
+————
+
+
+1. The line between the mouse and the red dot should actually be at full transparency if it was the full width of the screen away.
+2. At the end of the game, it should draw a graph of the distance from the mouse to the target dot over the duration of the exercise (with the x axis being time into the exercise, and the Y axis being the distance). The Y axis should be scaled so that the graph takes up 1 quarter of the AREA of the screen.
+3. Persist the score to window.localStorage and then enable the user to view a graph of scores (y axis) over time (x axis, in historical attempt index)
+4. Record the positions of the mouse and the target dot every 20ms. Also save this to localStorage (but only once -- at the same time that we persist the score at the end of the exercise). For each historical attempt, we want to enable the user to view a re-play of that specific attempt. In this re-play, we also need to still render the other things in the exercise, like the black dot at the center of the screen, the timer, and the variable transparency line between the mouse and the target dot. During re-plays, there should also be a <skip> button at the top right corner of the screen to enable us to go back.
+
+———
+
+
+1. If the radius is set too high, then the target dot will travel off the screen. We do not want this to happen. Instead, we should make radius a proportion of the screen width and height, such that if the radius is full, then we'll travel in an elliptical path that goes wide (since the screen is wide), but doesn't travel off of the top of the screen.
+2. The difficulty settings / configurations should also be saved into the history, and visible when you see the historical scores
+3. The sliders should show their values they represent on the configuration screen.
+4. Currently, you have a bug where when we replay, it also records and saves another example. Think through your thoughts on how you should restructure things to avoid this issue.
+
+
+-----
+
+
+How can we make it so that the replay logic is less tightly coupled to the rest of the logic? What abstractions can we form to enable this and help make the code more understandable?
+
+----
+Please produce the full functional implementation, no shorthand or leaving things out
+----

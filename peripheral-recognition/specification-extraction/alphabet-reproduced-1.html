@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alphabet Peripheral Vision Test</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            display: block;
+            background-color: #f0f0f0;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<div id="configModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Configure Test</h2>
+        <label>Letter size: <span id="letterSizeValue">110</span>px
+            <input type="range" id="letterSize" min="20" max="200" value="110">
+        </label>
+        <label>Number of letters: <span id="letterCountValue">26</span>
+            <input type="range" id="letterCount" min="5" max="26" value="26">
+        </label>
+        <label>Test duration: <span id="testDurationValue">60</span> seconds
+            <input type="range" id="testDuration" min="30" max="180" value="60">
+        </label>
+        <label>Exclusion radius: <span id="exclusionRadiusValue">250</span>px
+            <input type="range" id="exclusionRadius" min="0" max="500" value="250">
+        </label>
+        <label>
+            <input type="checkbox" id="highlightTarget"> Highlight target letter
+        </label>
+        <label>
+            <input type="checkbox" id="motionMode"> Enable motion mode
+        </label>
+        <label>
+            <input type="checkbox" id="rotateLetters"> Rotate letters 90 degrees
+        </label>
+        <label>Motion speed: <span id="motionSpeedValue">5</span>
+            <input type="range" id="motionSpeed" min="1" max="10" value="5">
+        </label>
+        <button id="startTest">Start Test</button>
+    </div>
+</div>
+
+<div id="resultsModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Test Results</h2>
+        <p id="resultsContent"></p>
+        <button id="restartTest">Restart Test</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const configModal = document.getElementById('configModal');
+    const resultsModal = document.getElementById('resultsModal');
+    const startTestBtn = document.getElementById('startTest');
+    const restartTestBtn = document.getElementById('restartTest');
+    const closeBtns = document.getElementsByClassName('close');
+
+    let config = {
+        letterSize: 110,
+        letterCount: 26,
+        testDuration: 60,
+        exclusionRadius: 250,
+        highlightTarget: false,
+        motionMode: false,
+        rotateLetters: false,
+        motionSpeed: 5
+    };
+
+    let gameState = {
+        letters: [],
+        currentLetter: 'A',
+        startTime: null,
+        endTime: null,
+        clickedLetters: 0,
+        score: 0
+    };
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    function initGame() {
+        gameState.letters = [];
+        gameState.currentLetter = 'A';
+        gameState.clickedLetters = 0;
+        gameState.score = 0;
+
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.slice(0, config.letterCount);
+        for (let letter of alphabet) {
+            let x, y;
+            do {
+                x = Math.random() * (canvas.width - config.letterSize);
+                y = Math.random() * (canvas.height - config.letterSize);
+            } while (isOverlapping(x, y));
+
+            gameState.letters.push({
+                letter,
+                x,
+                y,
+                dx: config.motionMode ? (Math.random() - 0.5) * config.motionSpeed : 0,
+                dy: config.motionMode ? (Math.random() - 0.5) * config.motionSpeed : 0
+            });
+        }
+
+        gameState.startTime = Date.now();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function isOverlapping(x, y) {
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        if (Math.hypot(x - centerX, y - centerY) < config.exclusionRadius) {
+            return true;
+        }
+        for (let letter of gameState.letters) {
+            if (Math.hypot(x - letter.x, y - letter.y) < config.letterSize) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw exclusion zone
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, config.exclusionRadius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(200, 200, 200, 0.5)';
+        ctx.fill();
+
+        // Draw focus point
+        ctx.fillStyle = 'black';
+        ctx.fillRect(canvas.width / 2 - 5, canvas.height / 2 - 5, 10, 10);
+
+        // Draw current letter
+        ctx.font = '24px Arial';
+        ctx.fillStyle = 'black';
+        ctx.fillText(`Find: ${gameState.currentLetter}`, canvas.width / 2 - 30, canvas.height / 2 - 30);
+
+        for (let letter of gameState.letters) {
+            if (config.motionMode) {
+                letter.x += letter.dx;
+                letter.y += letter.dy;
+
+                // Bounce off walls
+                if (letter.x < 0 || letter.x > canvas.width - config.letterSize) letter.dx *= -1;
+                if (letter.y < 0 || letter.y > canvas.height - config.letterSize) letter.dy *= -1;
+
+                // Bounce off exclusion zone
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const distance = Math.hypot(letter.x - centerX, letter.y - centerY);
+                if (distance < config.exclusionRadius) {
+                    const angle = Math.atan2(letter.y - centerY, letter.x - centerX);
+                    letter.x = centerX + Math.cos(angle) * config.exclusionRadius;
+                    letter.y = centerY + Math.sin(angle) * config.exclusionRadius;
+                    letter.dx = Math.cos(angle) * config.motionSpeed;
+                    letter.dy = Math.sin(angle) * config.motionSpeed;
+                }
+            }
+
+            ctx.font = `${config.letterSize}px Arial`;
+            ctx.fillStyle = letter.letter === gameState.currentLetter && config.highlightTarget ? 'red' : 'black';
+
+            ctx.save();
+            ctx.translate(letter.x + config.letterSize / 2, letter.y + config.letterSize / 2);
+            if (config.rotateLetters) {
+                ctx.rotate(-Math.PI / 2);
+            }
+            ctx.fillText(letter.letter, -config.letterSize / 2, config.letterSize / 2);
+            ctx.restore();
+        }
+
+        const elapsedTime = (Date.now() - gameState.startTime) / 1000;
+        if (elapsedTime < config.testDuration && gameState.clickedLetters < config.letterCount) {
+            requestAnimationFrame(gameLoop);
+        } else {
+            endGame();
+        }
+    }
+
+    function endGame() {
+        gameState.endTime = Date.now();
+        const timeTaken = (gameState.endTime - gameState.startTime) / 1000;
+        const allLettersClicked = gameState.clickedLetters === config.letterCount;
+
+        if (allLettersClicked) {
+            gameState.score = Math.round((config.letterCount / timeTaken) * 1000);
+        } else {
+            gameState.score = gameState.clickedLetters * 10;
+        }
+
+        const resultsContent = document.getElementById('resultsContent');
+        resultsContent.innerHTML = `
+                Time taken: ${timeTaken.toFixed(2)} seconds<br>
+                Letters clicked: ${gameState.clickedLetters} / ${config.letterCount}<br>
+                Score: ${gameState.score}
+            `;
+
+        // Store results in localStorage
+        const results = JSON.parse(localStorage.getItem('testResults') || '[]');
+        results.push({
+            date: new Date().toISOString(),
+            timeTaken,
+            lettersClicked: gameState.clickedLetters,
+            score: gameState.score,
+            config: { ...config }
+        });
+        localStorage.setItem('testResults', JSON.stringify(results));
+
+        resultsModal.style.display = 'block';
+    }
+
+    canvas.addEventListener('click', (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        for (let letter of gameState.letters) {
+            if (x > letter.x && x < letter.x + config.letterSize &&
+                y > letter.y && y < letter.y + config.letterSize &&
+                letter.letter === gameState.currentLetter) {
+                gameState.clickedLetters++;
+                gameState.currentLetter = String.fromCharCode(gameState.currentLetter.charCodeAt(0) + 1);
+                if (gameState.currentLetter > 'Z') {
+                    endGame();
+                }
+                createConfetti(x, y);
+                break;
+            }
+        }
+    });
+
+    function createConfetti(x, y) {
+        for (let i = 0; i < 50; i++) {
+            const confetti = document.createElement('div');
+            confetti.style.position = 'absolute';
+            confetti.style.left = `${x}px`;
+            confetti.style.top = `${y}px`;
+            confetti.style.width = '10px';
+            confetti.style.height = '10px';
+            confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            confetti.style.borderRadius = '50%';
+            confetti.style.pointerEvents = 'none';
+            document.body.appendChild(confetti);
+
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = Math.random() * 5 + 5;
+            const vx = Math.cos(angle) * velocity;
+            const vy = Math.sin(angle) * velocity;
+
+            let confettiY = y;
+            let confettiX = x;
+            let opacity = 1;
+
+            function animateConfetti() {
+                confettiY += vy;
+                confettiX += vx;
+                opacity -= 0.02;
+                confetti.style.top = `${confettiY}px`;
+                confetti.style.left = `${confettiX}px`;
+                confetti.style.opacity = opacity;
+
+                if (opacity > 0) {
+                    requestAnimationFrame(animateConfetti);
+                } else {
+                    confetti.remove();
+                }
+            }
+
+            requestAnimationFrame(animateConfetti);
+        }
+    }
+
+    startTestBtn.addEventListener('click', () => {
+        configModal.style.display = 'none';
+        initGame();
+    });
+
+    restartTestBtn.addEventListener('click', () => {
+        resultsModal.style.display = 'none';
+        configModal.style.display = 'block';
+    });
+
+    for (let closeBtn of closeBtns) {
+        closeBtn.addEventListener('click', () => {
+            configModal.style.display = 'none';
+            resultsModal.style.display = 'none';
+        });
+    }
+
+    window.addEventListener('load', () => {
+        resizeCanvas();
+        configModal.style.display = 'block';
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // Configuration updates
+    document.getElementById('letterSize').addEventListener('input', (e) => {
+        config.letterSize = parseInt(e.target.value);
+        document.getElementById('letterSizeValue').textContent = config.letterSize;
+    });
+
+    document.getElementById('letterCount').addEventListener('input', (e) => {
+        config.letterCount = parseInt(e.target.value);
+        document.getElementById('letterCountValue').textContent = config.letterCount;
+    });
+
+    document.getElementById('testDuration').addEventListener('input', (e) => {
+        config.testDuration = parseInt(e.target.value);
+        document.getElementById('testDurationValue').textContent = config.testDuration;
+    });
+
+    document.getElementById('exclusionRadius').addEventListener('input', (e) => {
+        config.exclusionRadius = parseInt(e.target.value);
+        document.getElementById('exclusionRadiusValue').textContent = config.exclusionRadius;
+    });
+
+    document.getElementById('highlightTarget').addEventListener('change', (e) => {
+        config.highlightTarget = e.target.checked;
+    });
+
+    document.getElementById('motionMode').addEventListener('change', (e) => {
+        config.motionMode = e.target.checked;
+    });
+
+    document.getElementById('rotateLetters').addEventListener('change', (e) => {
+        config.rotateLetters = e.target.checked;
+    });
+
+    document.getElementById('motionSpeed').addEventListener('input', (e) => {
+        config.motionSpeed = parseInt(e.target.value);
+        document.getElementById('motionSpeedValue').textContent = config.motionSpeed;
+    });
+</script>
+</body>
+</html>

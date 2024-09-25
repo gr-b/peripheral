@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alphabet Peripheral Vision Test</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; }
+        #gameCanvas { display: block; }
+        .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 600px; }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: black; }
+        button { margin: 5px; padding: 10px; }
+        input[type="range"] { width: 100%; }
+    </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="configModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Test Configuration</h2>
+        <label>Letter size: <span id="letterSizeValue">20</span>px</label>
+        <input type="range" id="letterSize" min="20" max="200" step="5" value="20">
+        <label>Number of letters: <span id="letterCountValue">5</span></label>
+        <input type="range" id="letterCount" min="5" max="26" value="5">
+        <label>Exclusion radius: <span id="exclusionRadiusValue">0</span>px</label>
+        <input type="range" id="exclusionRadius" min="0" max="500" step="25" value="0">
+        <label><input type="checkbox" id="highlightTarget"> Highlight target letter</label>
+        <label><input type="checkbox" id="enableMotion"> Enable letter motion</label>
+        <label><input type="checkbox" id="rotateLetters"> Rotate letters 90°</label>
+        <label><input type="checkbox" id="disappearLetters"> Make letters disappear after correct click</label>
+        <label>Motion speed: <span id="motionSpeedValue">1</span></label>
+        <input type="range" id="motionSpeed" min="1" max="10" value="1">
+        <button id="startTest">Start Test</button>
+    </div>
+</div>
+<div id="resultsModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Test Results</h2>
+        <p>Time: <span id="resultTime"></span> seconds</p>
+        <button id="newTest">New Test</button>
+        <button id="viewHistory">View History</button>
+    </div>
+</div>
+<div id="historyModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Test History</h2>
+        <ul id="historyList"></ul>
+    </div>
+</div>
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let letters = [];
+    let targetLetter = '';
+    let startTime, endTime;
+    let config = {
+        letterSize: 20,
+        letterCount: 5,
+        exclusionRadius: 0,
+        highlightTarget: false,
+        enableMotion: false,
+        rotateLetters: false,
+        disappearLetters: false,
+        motionSpeed: 1
+    };
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function Letter(x, y, char) {
+        this.x = x;
+        this.y = y;
+        this.char = char;
+        this.vx = (Math.random() - 0.5) * config.motionSpeed;
+        this.vy = (Math.random() - 0.5) * config.motionSpeed;
+        this.clicked = false;
+    }
+
+    Letter.prototype.draw = function() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        if (config.rotateLetters) ctx.rotate(-Math.PI / 2);
+        ctx.font = `${config.letterSize}px Arial`;
+        ctx.fillStyle = this.char === targetLetter && config.highlightTarget ? 'red' : 'black';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.char, 0, 0);
+        ctx.restore();
+    };
+
+    Letter.prototype.update = function() {
+        if (config.enableMotion) {
+            this.x += this.vx;
+            this.y += this.vy;
+            if (this.x < config.letterSize / 2 || this.x > canvas.width - config.letterSize / 2) this.vx *= -1;
+            if (this.y < config.letterSize / 2 || this.y > canvas.height - config.letterSize / 2) this.vy *= -1;
+        }
+    };
+
+    function generateLetters() {
+        letters = [];
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        for (let i = 0; i < config.letterCount; i++) {
+            let x, y;
+            do {
+                x = Math.random() * (canvas.width - config.letterSize) + config.letterSize / 2;
+                y = Math.random() * (canvas.height - config.letterSize) + config.letterSize / 2;
+            } while (
+                Math.hypot(x - canvas.width / 2, y - canvas.height / 2) < config.exclusionRadius ||
+                letters.some(l => Math.hypot(x - l.x, y - l.y) < config.letterSize)
+                );
+            letters.push(new Letter(x, y, alphabet[i]));
+        }
+        targetLetter = letters[0].char;
+    }
+
+    function drawGame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        letters.forEach(letter => {
+            if (!letter.clicked || !config.disappearLetters) {
+                letter.update();
+                letter.draw();
+            }
+        });
+        ctx.font = '24px Arial';
+        ctx.fillStyle = 'black';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Find: ${targetLetter}`, canvas.width / 2, 30);
+        requestAnimationFrame(drawGame);
+    }
+
+    canvas.addEventListener('click', e => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        letters.forEach(letter => {
+            if (Math.hypot(x - letter.x, y - letter.y) < config.letterSize / 2 && letter.char === targetLetter) {
+                letter.clicked = true;
+                const nextIndex = letters.findIndex(l => l.char === targetLetter) + 1;
+                if (nextIndex < letters.length) {
+                    targetLetter = letters[nextIndex].char;
+                } else {
+                    endTime = Date.now();
+                    showResults();
+                }
+            }
+        });
+    });
+
+    function startTest() {
+        document.getElementById('configModal').style.display = 'none';
+        generateLetters();
+        startTime = Date.now();
+        drawGame();
+    }
+
+    function showResults() {
+        const time = (endTime - startTime) / 1000;
+        document.getElementById('resultTime').textContent = time.toFixed(2);
+        document.getElementById('resultsModal').style.display = 'block';
+        saveResult(time);
+    }
+
+    function saveResult(time) {
+        const results = JSON.parse(localStorage.getItem('testResults') || '[]');
+        results.push({ date: new Date().toISOString(), time, config: { ...config } });
+        localStorage.setItem('testResults', JSON.stringify(results));
+    }
+
+    function showHistory() {
+        const results = JSON.parse(localStorage.getItem('testResults') || '[]');
+        const list = document.getElementById('historyList');
+        list.innerHTML = '';
+        results.forEach((result, index) => {
+            const li = document.createElement('li');
+            li.textContent = `Test ${index + 1}: ${result.time.toFixed(2)}s - ${new Date(result.date).toLocaleString()}`;
+            const button = document.createElement('button');
+            button.textContent = 'Use Config';
+            button.onclick = () => {
+                config = { ...result.config };
+                updateConfigUI();
+                document.getElementById('historyModal').style.display = 'none';
+                document.getElementById('configModal').style.display = 'block';
+            };
+            li.appendChild(button);
+            list.appendChild(li);
+        });
+        document.getElementById('historyModal').style.display = 'block';
+    }
+
+    function updateConfigUI() {
+        document.getElementById('letterSize').value = config.letterSize;
+        document.getElementById('letterSizeValue').textContent = config.letterSize;
+        document.getElementById('letterCount').value = config.letterCount;
+        document.getElementById('letterCountValue').textContent = config.letterCount;
+        document.getElementById('exclusionRadius').value = config.exclusionRadius;
+        document.getElementById('exclusionRadiusValue').textContent = config.exclusionRadius;
+        document.getElementById('highlightTarget').checked = config.highlightTarget;
+        document.getElementById('enableMotion').checked = config.enableMotion;
+        document.getElementById('rotateLetters').checked = config.rotateLetters;
+        document.getElementById('disappearLetters').checked = config.disappearLetters;
+        document.getElementById('motionSpeed').value = config.motionSpeed;
+        document.getElementById('motionSpeedValue').textContent = config.motionSpeed;
+    }
+
+    document.querySelectorAll('.close').forEach(el => {
+        el.onclick = () => el.parentElement.parentElement.style.display = 'none';
+    });
+
+    document.getElementById('startTest').onclick = startTest;
+    document.getElementById('newTest').onclick = () => {
+        document.getElementById('resultsModal').style.display = 'none';
+        document.getElementById('configModal').style.display = 'block';
+    };
+    document.getElementById('viewHistory').onclick = showHistory;
+
+    ['letterSize', 'letterCount', 'exclusionRadius', 'motionSpeed'].forEach(id => {
+        const el = document.getElementById(id);
+        el.oninput = () => {
+            config[id] = parseInt(el.value);
+            document.getElementById(`${id}Value`).textContent = el.value;
+        };
+    });
+
+    ['highlightTarget', 'enableMotion', 'rotateLetters', 'disappearLetters'].forEach(id => {
+        document.getElementById(id).onchange = e => config[id] = e.target.checked;
+    });
+
+    updateConfigUI();
+    document.getElementById('configModal').style.display = 'block';
+</script>
+</body>
+</html>

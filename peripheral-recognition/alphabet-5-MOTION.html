@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alphabet Peripheral Vision Test with Motion Mode</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            display: block;
+        }
+        #configModal, #resultModal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .hidden {
+            display: none;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .slider-container input {
+            margin-right: 10px;
+        }
+        #sampleLetter {
+            min-width: 60px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<div id="configModal">
+    <h2>Configure Test</h2>
+    <div class="slider-container">
+        <label for="letterSize">Letter Size:</label>
+        <input type="range" id="letterSize" min="20" max="200" value="30">
+        <span id="letterSizeValue">30</span>
+        <div id="sampleLetter">A</div>
+    </div>
+    <div class="slider-container">
+        <label for="letterCount">Number of Letters:</label>
+        <input type="range" id="letterCount" min="5" max="26" value="26">
+        <span id="letterCountValue">26</span>
+    </div>
+    <div class="slider-container">
+        <label for="duration">Duration (seconds):</label>
+        <input type="range" id="duration" min="30" max="180" value="60">
+        <span id="durationValue">60</span>
+    </div>
+    <div>
+        <input type="checkbox" id="highlightTarget" checked>
+        <label for="highlightTarget">Highlight target letter in red</label>
+    </div>
+    <div>
+        <input type="checkbox" id="motionMode">
+        <label for="motionMode">Enable Motion Mode</label>
+    </div>
+    <div class="slider-container">
+        <label for="motionSpeed">Motion Speed:</label>
+        <input type="range" id="motionSpeed" min="1" max="10" value="5">
+        <span id="motionSpeedValue">5</span>
+    </div>
+    <button id="startButton">Start Test</button>
+</div>
+
+<div id="resultModal" class="hidden">
+    <h2>Test Results</h2>
+    <p>Time taken: <span id="timeTaken"></span> seconds</p>
+    <p>Letters clicked: <span id="lettersClicked"></span></p>
+    <p>Score: <span id="score"></span></p>
+    <button id="restartButton">Restart</button>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const configModal = document.getElementById('configModal');
+    const resultModal = document.getElementById('resultModal');
+    const sampleLetter = document.getElementById('sampleLetter');
+
+    let letters = [];
+    let currentLetterIndex = 0;
+    let startTime, endTime;
+    let gameTimeout;
+    let animationFrame;
+    let confetti = [];
+    let config = {
+        letterSize: 30,
+        letterCount: 26,
+        duration: 60,
+        highlightTarget: true,
+        motionMode: false,
+        motionSpeed: 5
+    };
+
+    const GAP_SIZE = 100;
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    function generateLetters() {
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        letters = [];
+        const attempts = 100; // Max attempts to place a letter
+
+        for (let i = 0; i < config.letterCount; i++) {
+            let placed = false;
+            for (let attempt = 0; attempt < attempts; attempt++) {
+                const x = Math.random() * (canvas.width - config.letterSize);
+                const y = Math.random() * (canvas.height - config.letterSize);
+
+                if (isValidPosition(x, y)) {
+                    letters.push({
+                        letter: alphabet[i],
+                        x: x,
+                        y: y,
+                        width: config.letterSize,
+                        height: config.letterSize,
+                        dx: (Math.random() - 0.5) * config.motionSpeed,
+                        dy: (Math.random() - 0.5) * config.motionSpeed
+                    });
+                    placed = true;
+                    break;
+                }
+            }
+            if (!placed) {
+                console.warn(`Couldn't place letter ${alphabet[i]}`);
+            }
+        }
+    }
+
+    function isValidPosition(x, y) {
+        const minDistance = config.letterSize + GAP_SIZE;
+        return letters.every(letter =>
+                Math.hypot(x - letter.x, y - letter.y) >= minDistance
+            ) && x >= 0 && x <= canvas.width - config.letterSize
+            && y >= 0 && y <= canvas.height - config.letterSize;
+    }
+
+    function drawLetters() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw center dot
+        ctx.fillStyle = 'black';
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw current target letter above center dot
+        ctx.font = '20px Arial';
+        ctx.fillText(letters[currentLetterIndex].letter, canvas.width / 2 - 10, canvas.height / 2 - 20);
+
+        // Draw letters and their clickable areas
+        ctx.font = `${config.letterSize}px Arial`;
+        letters.forEach((letter, index) => {
+            // Draw clickable area
+            ctx.fillStyle = 'rgba(173, 216, 230, 0.5)'; // light blue with 50% opacity
+            ctx.fillRect(letter.x, letter.y, letter.width, letter.height);
+
+            // Draw letter
+            ctx.fillStyle = (index === currentLetterIndex && config.highlightTarget) ? 'red' : 'black';
+            ctx.fillText(letter.letter, letter.x, letter.y + letter.height);
+        });
+
+        // Draw confetti
+        confetti.forEach(particle => {
+            ctx.fillStyle = particle.color;
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
+    function updateLetterPositions() {
+        letters.forEach(letter => {
+            letter.x += letter.dx;
+            letter.y += letter.dy;
+
+            // Bounce off walls
+            if (letter.x <= 0 || letter.x + letter.width >= canvas.width) {
+                letter.dx = -letter.dx;
+            }
+            if (letter.y <= 0 || letter.y + letter.height >= canvas.height) {
+                letter.dy = -letter.dy;
+            }
+        });
+    }
+
+    function updateConfetti() {
+        confetti = confetti.filter(particle => particle.life > 0);
+        confetti.forEach(particle => {
+            particle.x += particle.dx;
+            particle.y += particle.dy;
+            particle.dy += 0.1; // gravity
+            particle.life--;
+        });
+    }
+
+    function createConfetti(x, y) {
+        for (let i = 0; i < 50; i++) {
+            confetti.push({
+                x: x,
+                y: y,
+                dx: (Math.random() - 0.5) * 4,
+                dy: (Math.random() - 0.5) * 4,
+                size: Math.random() * config.letterSize / 10 + 2,
+                color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                life: 60 // 2 seconds at 30 fps
+            });
+        }
+    }
+
+    function gameLoop() {
+        if (config.motionMode) {
+            updateLetterPositions();
+        }
+        updateConfetti();
+        drawLetters();
+        animationFrame = requestAnimationFrame(gameLoop);
+    }
+
+    function handleClick(event) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        const currentLetter = letters[currentLetterIndex];
+        if (x >= currentLetter.x && x <= currentLetter.x + currentLetter.width &&
+            y >= currentLetter.y && y <= currentLetter.y + currentLetter.height) {
+            createConfetti(currentLetter.x + currentLetter.width / 2, currentLetter.y + currentLetter.height / 2);
+            currentLetterIndex++;
+            if (currentLetterIndex >= config.letterCount) {
+                endGame(true);
+            }
+        }
+    }
+
+    function startGame() {
+        configModal.classList.add('hidden');
+        resizeCanvas();
+        generateLetters();
+        startTime = Date.now();
+        canvas.addEventListener('click', handleClick);
+        gameTimeout = setTimeout(() => endGame(false), config.duration * 1000);
+        gameLoop();
+    }
+
+    function endGame(completed) {
+        canvas.removeEventListener('click', handleClick);
+        clearTimeout(gameTimeout);
+        cancelAnimationFrame(animationFrame);
+        endTime = Date.now();
+        const timeTaken = (endTime - startTime) / 1000;
+        document.getElementById('timeTaken').textContent = timeTaken.toFixed(2);
+        document.getElementById('lettersClicked').textContent = currentLetterIndex;
+
+        let score;
+        if (completed) {
+            score = Math.round(10000 * (config.letterCount / timeTaken));
+        } else {
+            score = Math.round(10000 * (currentLetterIndex / config.duration));
+        }
+        document.getElementById('score').textContent = score;
+
+        resultModal.classList.remove('hidden');
+
+        // Save results to localStorage
+        const results = JSON.parse(localStorage.getItem('testResults') || '[]');
+        results.push({
+            date: new Date().toISOString(),
+            timeTaken,
+            lettersClicked: currentLetterIndex,
+            completed,
+            score,
+            config: { ...config }
+        });
+        localStorage.setItem('testResults', JSON.stringify(results));
+    }
+
+    document.getElementById('startButton').addEventListener('click', startGame);
+    document.getElementById('restartButton').addEventListener('click', () => {
+        resultModal.classList.add('hidden');
+        configModal.classList.remove('hidden');
+    });
+
+    // Update configuration values
+    ['letterSize', 'letterCount', 'duration', 'motionSpeed'].forEach(param => {
+        const input = document.getElementById(param);
+        const value = document.getElementById(`${param}Value`);
+        input.addEventListener('input', () => {
+            config[param] = parseInt(input.value);
+            value.textContent = input.value;
+            if (param === 'letterSize') {
+                sampleLetter.style.fontSize = `${config[param]}px`;
+            }
+        });
+    });
+
+    document.getElementById('highlightTarget').addEventListener('change', (e) => {
+        config.highlightTarget = e.target.checked;
+    });
+
+    document.getElementById('motionMode').addEventListener('change', (e) => {
+        config.motionMode = e.target.checked;
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+</script>
+</body>
+</html>

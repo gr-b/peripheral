@@ -1,0 +1,170 @@
+
+Adapt the attached specification to be for a similar but different peripheral vision test.
+
+In this one, we will still have the black dot at the center of the screen.
+
+Then, strewn around the screen similar to the attached image (in a organized fashion like that), there should be letters of the alphabet. The object of the game is for the player to fix their gaze on the black dot in the center, then while the timer is running, click on (within 50px radius of) the next letter in the alphabet. Start with A, and go to z. The size of the letters should be configurable. The letters should be evenly spaced and non-overlapping. The next letter the user is trying to find should be displayed right above the dot in the center. The user's score is the amount of time it takes them to get through the whole mass of letters. The number of letters is configurable. (a until some final letter, configurable).
+
+
+==================== BEGIN PREVIOUS SPECIFICATION ==================
+==================== BEGIN PREVIOUS SPECIFICATION ==================
+Peripheral Vision Movement Tracking Test Prompt
+Write a javascript canvas test of peripheral vision.
+
+The canvas should be the size of the whole browser window (visible room only). All measurements / constants should be relative to the visible width and height.
+
+The peripheral vision test consists of a slowly moving (speed dependent on configured difficulty level (configuration in a modal before starting the game / test) red ball. A black dot should be placed in the center of the canvas, such that the user can stare at the black dot while they attempt to attend to the red dot in their peripheral vision. The user should place their head and eyes such that their field of vision ends at the edges of the screen.
+
+The user's goal is to, while keeping their eyes focused on the center black dot, keep their mouse positioned as close as they can to the red dot, while the red dot is moving.
+
+The red dot should move smoothly in approximately a circle around the black dot (farther away depending on the difficulty -- the approximate radius from the red dot should be configurable with a slider in the configuration modal). It should deviate from the circle by a random number up to a configurable amount (basically, it should wiggle around a lesser and larger radius at it moves in an rough circle). It should randomly change clockwise / counter-clockwise direction after a random amount of time (and the minimum / maximum amount of random time should be configurable).
+
+
+The score should be calculated via the euclidean distance from the mouse to the center of the red dot, with a reading taken every 100ms. Draw a red line from the mouse to the center of the red dot, whose opacity is proportional to the distance (with opaque being very good score (low distance) and transparent being very bad (if the distance is more than half the width of the screen, then the line should be completely transparent)).
+
+The duration of the exercise should be configurable in seconds. During the exercise, show the number of seconds as it counts down. The score should be finally tabulated as the average reading every 100ms over the entire exercise. When the exercise is over, we should show the modal again, but this time, it should show the score.
+
+
+
+————
+
+
+1. The line between the mouse and the red dot should actually be at full transparency if it was the full width of the screen away.
+2. At the end of the game, it should draw a graph of the distance from the mouse to the target dot over the duration of the exercise (with the x axis being time into the exercise, and the Y axis being the distance). The Y axis should be scaled so that the graph takes up 1 quarter of the AREA of the screen.
+3. Persist the score to window.localStorage and then enable the user to view a graph of scores (y axis) over time (x axis, in historical attempt index)
+4. Record the positions of the mouse and the target dot every 20ms. Also save this to localStorage (but only once -- at the same time that we persist the score at the end of the exercise). For each historical attempt, we want to enable the user to view a re-play of that specific attempt. In this re-play, we also need to still render the other things in the exercise, like the black dot at the center of the screen, the timer, and the variable transparency line between the mouse and the target dot. During re-plays, there should also be a <skip> button at the top right corner of the screen to enable us to go back.
+
+———
+
+
+1. If the radius is set too high, then the target dot will travel off the screen. We do not want this to happen. Instead, we should make radius a proportion of the screen width and height, such that if the radius is full, then we'll travel in an elliptical path that goes wide (since the screen is wide), but doesn't travel off of the top of the screen.
+2. The difficulty settings / configurations should also be saved into the history, and visible when you see the historical scores
+3. The sliders should show their values they represent on the configuration screen.
+4. Currently, you have a bug where when we replay, it also records and saves another example. Think through your thoughts on how you should restructure things to avoid this issue.
+==================== END PREVIOUS SPECIFICATION ==================
+==================== END PREVIOUS SPECIFICATION ==================
+
+
+It produced this specification:
+
+# Alphabet-based Peripheral Vision Test Specification
+
+## Overview
+This specification outlines a peripheral vision test where users must identify letters of the alphabet scattered across the screen while maintaining focus on a central point.
+
+## Canvas and Layout
+- The canvas should occupy the entire browser window (visible area only).
+- All measurements and constants should be relative to the visible width and height.
+- A black dot should be placed at the center of the canvas as the focal point.
+- Letters of the alphabet should be distributed across the screen in an organized, evenly-spaced, and non-overlapping manner, similar to the provided image.
+
+## Game Mechanics
+1. The user should focus their gaze on the central black dot throughout the test.
+2. Letters from 'A' to a configurable final letter (up to 'Z') are displayed on the screen.
+3. The current target letter is displayed just above the central black dot.
+4. The user must click within a 50px radius of the correct letter while maintaining focus on the central dot.
+5. Upon successful click, the next letter in the sequence becomes the target.
+6. The game continues until all letters in the sequence have been clicked.
+
+## Scoring
+- The score is the total time taken to complete the sequence.
+- Timer starts when the first letter ('A') becomes the target.
+- Timer stops when the last letter is successfully clicked.
+
+## Configuration
+Before starting the game, a modal should appear with the following configurable options:
+1. Size of the letters
+2. Number of letters (e.g., A to M, A to T, A to Z)
+3. Duration of the exercise (in seconds)
+
+## Game Flow
+1. Configuration modal appears.
+2. User sets preferences and starts the game.
+3. Letters and central dot appear on screen.
+4. Timer begins when 'A' is displayed as the target.
+5. User clicks on letters in alphabetical order.
+6. Game ends when the last letter is clicked or when the configured duration is reached.
+7. Results are displayed, including total time and any missed letters.
+
+## Data Storage and Replay
+- Save game results (score, configuration, letter positions) to `localStorage`.
+- Implement a feature to view historical scores over time.
+- Allow replaying of previous attempts, showing letter positions and user clicks.
+
+## Additional Features
+1. Implement a skip button for replays.
+2. Ensure the configuration is saved with historical data and viewable with scores.
+3. Display current values on configuration sliders.
+
+## User Interface
+- Clear, high-contrast design for easy visibility.
+- Responsive layout adapting to different screen sizes.
+- Visual feedback for correct and incorrect clicks.
+
+## Accessibility Considerations
+- Ensure color choices have sufficient contrast.
+- Provide audio cues for letter changes and successful clicks (optional).
+- Allow keyboard navigation for configuration modal.
+
+## Performance Optimization
+- Efficient rendering of letters and update mechanisms.
+- Smooth animations for visual feedback.
+
+## Future Enhancements
+- Multiple difficulty levels affecting letter placement or time limits.
+- Integration with eye-tracking hardware for more precise measurements.
+- Multi-language support for non-Latin alphabets.
+
+========= END PRODUCED SPECIFICATION =========
+
+Iteration 1:
+
+Great!
+
+The letters currently go off of the screen. Make sure they don't go off the screen
+Add a checkbox to the configuration as to whether the next letter should be red (if unchecked, just draw all letters in black)
+No two letters should be drawn within (LETTER_WIDTH + GAP_SIZE) of each other. When placing the letters, keep track of their centerpoints, and resample the random position if the candidate position is within (LETTER_WIDTH + GAP_SIZE) of an already-placed letter. GAP_SIZE should be 100px.
+We need the slider to go WAY larger for the possible size of letters. Also, when we slide the slider, we should show an example letter next to the slider of the size that the slider is set to, updating in real-time (as we slide the slider, we should gradually see the effect of the size change on that example letter).
+
+============
+
+Great!
+
+But there's MAJOR, terrible problem. When I click on the letter when they are LARGE, it doesn't register most of the time. This must be because the area we are detecting the click in is wrong depending on the size of the letter.
+
+Please cover the EXACT area of where we are detecting the click for each letter in very light blue 50
+
+==============
+
+Great!
+But there's MAJOR, terrible problem. When I click on the letter when they are LARGE, it doesn't register most of the time. This must be because the area we are detecting the click in is wrong depending on the size of the letter.
+Please cover the EXACT area of where we are detecting the click for each letter in very light blue 50% opaque
+
+===============
+
+
+Great! Thank you, very good Claudy!
+
+Now, I want you to add another checkbox in the configuration! This checkbox should enable (if checked) MOTION MODE.
+
+MOTION MODE is where the letters (and their click bounding boxes) MOVE! They should move at a constant speed, smoothly, in a random direction. However, we want to make sure that this random motion doesn't just allow the letter to basically stay in the same average position. Instead, we want to ensure that the letters travel smoothly in a large area.
+
+The constant speed should be configurable.
+
+ALSO - when I click a letter correctly, please draw a confetti animation (double the size of the letter) in the position of the letter that plays over the next 2 seconds, then disappears
+
+================
+
+Great!
+
+Now, I want you to add a configurable radius around the center dot that the letters will not travel into during motion mode. If they begin to travel into this radius, they will 'bounce' off. Show this radius with a 90% light green circle drawn.
+
+Also, the slider for the size of the letters should 'snap' to increments of 5.
+
+Also, I can't restart the game after I've done it once. Restarting doesn't work; it just shows the black dot on completely white background. What the fuck?
+
+================
+
+Please make it so that when you finish a game and start again, it remembers what you put as your configuration. It should save these to localStorage.
+
+================

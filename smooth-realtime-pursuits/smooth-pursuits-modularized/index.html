@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Peripheral Vision Test</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f8;
+        }
+        #game-canvas {
+            display: block;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #ffffff;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #skip-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .config-item {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .config-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .config-item input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+            margin-top: 10px;
+        }
+        .config-item input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4a90e2;
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        .config-item input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: #ddd;
+            border-radius: 2px;
+        }
+        .config-item input[type="number"] {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .config-value {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: bold;
+            color: #4a90e2;
+        }
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #357abd;
+        }
+    </style>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+<button id="skip-button" style="display: none;">Skip</button>
+
+<div id="config-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Configure Test</h2>
+        <div class="config-grid">
+            <div class="config-item">
+                <label for="difficulty">Difficulty (Speed):</label>
+                <input type="range" id="difficulty" min="1" max="10" value="5">
+                <span id="difficulty-value" class="config-value">5</span>
+            </div>
+            <div class="config-item">
+                <label for="radius">Radius (%):</label>
+                <input type="range" id="radius" min="10" max="90" value="40">
+                <span id="radius-value" class="config-value">40</span>
+            </div>
+            <div class="config-item">
+                <label for="wiggle">Wiggle Amount (%):</label>
+                <input type="range" id="wiggle" min="0" max="50" value="20">
+                <span id="wiggle-value" class="config-value">20</span>
+            </div>
+            <div class="config-item">
+                <label for="min-direction-change">Min Direction Change Time (s):</label>
+                <input type="number" id="min-direction-change" min="1" max="10" value="2">
+            </div>
+            <div class="config-item">
+                <label for="max-direction-change">Max Direction Change Time (s):</label>
+                <input type="number" id="max-direction-change" min="2" max="20" value="10">
+            </div>
+            <div class="config-item">
+                <label for="duration">Test Duration (s):</label>
+                <input type="number" id="duration" min="10" max="300" value="60">
+            </div>
+        </div>
+        <div style="margin-top: 20px; text-align: center;">
+            <button id="start-test">Start Test</button>
+            <button id="view-history">View History</button>
+        </div>
+    </div>
+</div>
+
+<div id="results-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Test Results</h2>
+        <p>Your average score: <span id="final-score"></span></p>
+        <canvas id="results-graph"></canvas>
+        <button id="restart-test">Restart Test</button>
+        <button id="view-history">View History</button>
+    </div>
+</div>
+
+<div id="history-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Test History</h2>
+        <canvas id="history-graph"></canvas>
+        <div id="history-list"></div>
+    </div>
+</div>
+
+<script type="module">
+    import { GameEngine } from './gameEngine.js';
+    import { HistoryManager } from './historyManager.js';
+    import { Renderer } from './renderer.js';
+    import { ConfigManager } from './configManager.js';
+
+    const canvas = document.getElementById('game-canvas');
+    const configModal = document.getElementById('config-modal');
+    const resultsModal = document.getElementById('results-modal');
+    const historyModal = document.getElementById('history-modal');
+    const startButton = document.getElementById('start-test');
+    const restartButton = document.getElementById('restart-test');
+    const viewHistoryButtons = document.querySelectorAll('#view-history');
+    const closeButtons = document.getElementsByClassName('close');
+    const skipButton = document.getElementById('skip-button');
+
+    let gameEngine = new GameEngine(canvas);
+    const historyManager = new HistoryManager();
+    const configManager = new ConfigManager();
+
+    function showModal(modal) {
+        modal.style.display = 'block';
+    }
+
+    function hideModal(modal) {
+        modal.style.display = 'none';
+    }
+
+    function updateConfigValue(id) {
+        const input = document.getElementById(id);
+        const valueSpan = document.getElementById(`${id}-value`);
+        if (valueSpan) {
+            valueSpan.textContent = input.value;
+        }
+        input.addEventListener('input', () => {
+            if (valueSpan) {
+                valueSpan.textContent = input.value;
+            }
+        });
+    }
+
+    function startTest() {
+        const config = {
+            difficulty: parseInt(document.getElementById('difficulty').value),
+            radius: parseInt(document.getElementById('radius').value) / 100,
+            wiggle: parseInt(document.getElementById('wiggle').value) / 100,
+            minDirectionChange: parseInt(document.getElementById('min-direction-change').value),
+            maxDirectionChange: parseInt(document.getElementById('max-direction-change').value),
+            duration: parseInt(document.getElementById('duration').value)
+        };
+
+        configManager.saveConfig(config);
+        hideModal(configModal);
+        gameEngine.startLiveGame(config);
+    }
+
+    function showHistory() {
+        const history = historyManager.loadHistory();
+        const historyGraph = document.getElementById('history-graph');
+        historyGraph.width = 400;
+        historyGraph.height = 200;
+
+        const renderer = new Renderer(historyGraph);
+        renderer.drawResultsGraph(history.map(h => h.score), historyGraph.width, historyGraph.height);
+
+        const historyList = document.getElementById('history-list');
+        historyList.innerHTML = '';
+        history.forEach((attempt, index) => {
+            const item = document.createElement('div');
+            item.innerHTML = `
+                <h3>Attempt ${index + 1}: ${attempt.score.toFixed(2)}</h3>
+                <p>Date: ${new Date(attempt.date).toLocaleString()}</p>
+                <p>Configuration:</p>
+                <ul>
+                    ${Object.entries(attempt.config).map(([key, value]) => `<li>${key}: ${value}</li>`).join('')}
+                </ul>
+            `;
+            const replayButton = document.createElement('button');
+            replayButton.textContent = 'Replay';
+            replayButton.onclick = () => replayAttempt(attempt);
+            item.appendChild(replayButton);
+            historyList.appendChild(item);
+        });
+
+        showModal(historyModal);
+    }
+
+    function replayAttempt(attempt) {
+        hideModal(historyModal);
+        gameEngine.startReplay(attempt);
+        skipButton.style.display = 'block';
+    }
+
+    // Event listeners
+    startButton.addEventListener('click', startTest);
+    restartButton.addEventListener('click', () => {
+        hideModal(resultsModal);
+        showModal(configModal);
+    });
+    viewHistoryButtons.forEach(button => button.addEventListener('click', showHistory));
+    skipButton.addEventListener('click', () => {
+        gameEngine.onGameEnd();
+        skipButton.style.display = 'none';
+    });
+
+    for (let closeButton of closeButtons) {
+        closeButton.addEventListener('click', () => hideModal(closeButton.parentElement.parentElement));
+    }
+
+    window.addEventListener('resize', () => gameEngine.resizeCanvas());
+
+    // Initialize
+    gameEngine.resizeCanvas();
+    updateConfigValue('difficulty');
+    updateConfigValue('radius');
+    updateConfigValue('wiggle');
+    configManager.loadConfig();
+    showModal(configModal);
+</script>
+</body>
+</html>

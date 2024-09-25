@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alphabet Peripheral Vision Test</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            display: block;
+            background-color: #f0f0f0;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #mainMenu, #historyMenu {
+            text-align: center;
+            padding: 20px;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #configModal label, #configModal input {
+            display: block;
+            margin: 10px 0;
+        }
+        #historyList {
+            list-style-type: none;
+            padding: 0;
+        }
+        #historyList li {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        .sizePreview {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+        #exitButton {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div id="mainMenu">
+    <h1>Alphabet Peripheral Vision Test</h1>
+    <button id="startButton">Start New Test</button>
+    <button id="historyButton">View History</button>
+</div>
+
+<div id="historyMenu" style="display:none;">
+    <h2>Test History</h2>
+    <ul id="historyList"></ul>
+    <button id="backToMainButton">Back to Main Menu</button>
+</div>
+
+<canvas id="gameCanvas" style="display:none;"></canvas>
+
+<div id="configModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Test Configuration</h2>
+        <label>
+            Letter Size: <input type="range" id="letterSize" min="20" max="200" step="5">
+            <span id="letterSizeValue" class="sizePreview">A</span>
+        </label>
+        <label>
+            Number of Letters: <input type="range" id="letterCount" min="5" max="26" step="1">
+            <span id="letterCountValue"></span>
+        </label>
+        <label>
+            Exclusion Radius: <input type="range" id="exclusionRadius" min="0" max="500" step="25">
+            <span id="exclusionRadiusValue"></span>
+        </label>
+        <label>
+            <input type="checkbox" id="highlightTarget"> Highlight Target Letter
+        </label>
+        <label>
+            <input type="checkbox" id="motionMode"> Enable Motion Mode
+        </label>
+        <label>
+            <input type="checkbox" id="rotateLetters"> Rotate Letters 90°
+        </label>
+        <label>
+            Motion Speed: <input type="range" id="motionSpeed" min="1" max="10" step="1">
+            <span id="motionSpeedValue"></span>
+        </label>
+        <button id="startTest">Start Test</button>
+    </div>
+</div>
+
+<div id="resultsModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Test Results</h2>
+        <p>Time taken: <span id="timeTaken"></span> seconds</p>
+        <button id="backToMain">Back to Main Menu</button>
+    </div>
+</div>
+
+<button id="exitButton" style="display:none;">Exit</button>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const mainMenu = document.getElementById('mainMenu');
+    const historyMenu = document.getElementById('historyMenu');
+    const configModal = document.getElementById('configModal');
+    const resultsModal = document.getElementById('resultsModal');
+    const exitButton = document.getElementById('exitButton');
+
+    let letters = [];
+    let currentLetter = 'A';
+    let startTime;
+    let gameRunning = false;
+    let config = {
+        letterSize: 50,
+        letterCount: 26,
+        exclusionRadius: 100,
+        highlightTarget: false,
+        motionMode: false,
+        rotateLetters: false,
+        motionSpeed: 5
+    };
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function showMainMenu() {
+        mainMenu.style.display = 'block';
+        historyMenu.style.display = 'none';
+        canvas.style.display = 'none';
+        exitButton.style.display = 'none';
+    }
+
+    function showHistoryMenu() {
+        mainMenu.style.display = 'none';
+        historyMenu.style.display = 'block';
+        canvas.style.display = 'none';
+        exitButton.style.display = 'none';
+        displayHistory();
+    }
+
+    function showConfigModal() {
+        configModal.style.display = 'block';
+        updateConfigUI();
+    }
+
+    function hideConfigModal() {
+        configModal.style.display = 'none';
+    }
+
+    function showResultsModal(time) {
+        resultsModal.style.display = 'block';
+        document.getElementById('timeTaken').textContent = time.toFixed(2);
+    }
+
+    function hideResultsModal() {
+        resultsModal.style.display = 'none';
+    }
+
+    function updateConfigUI() {
+        document.getElementById('letterSize').value = config.letterSize;
+        document.getElementById('letterSizeValue').textContent = `A (${config.letterSize}px)`;
+        document.getElementById('letterSizeValue').style.fontSize = `${config.letterSize}px`;
+        document.getElementById('letterCount').value = config.letterCount;
+        document.getElementById('letterCountValue').textContent = config.letterCount;
+        document.getElementById('exclusionRadius').value = config.exclusionRadius;
+        document.getElementById('exclusionRadiusValue').textContent = config.exclusionRadius;
+        document.getElementById('highlightTarget').checked = config.highlightTarget;
+        document.getElementById('motionMode').checked = config.motionMode;
+        document.getElementById('rotateLetters').checked = config.rotateLetters;
+        document.getElementById('motionSpeed').value = config.motionSpeed;
+        document.getElementById('motionSpeedValue').textContent = config.motionSpeed;
+    }
+
+    function startGame() {
+        gameRunning = true;
+        letters = [];
+        currentLetter = 'A';
+        startTime = Date.now();
+        canvas.style.display = 'block';
+        mainMenu.style.display = 'none';
+        exitButton.style.display = 'block';
+        generateLetters();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function generateLetters() {
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        for (let i = 0; i < config.letterCount; i++) {
+            let letter;
+            do {
+                letter = {
+                    char: alphabet[i],
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * config.motionSpeed,
+                    vy: (Math.random() - 0.5) * config.motionSpeed
+                };
+            } while (isOverlapping(letter));
+            letters.push(letter);
+        }
+    }
+
+    function isOverlapping(newLetter) {
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        if (Math.hypot(newLetter.x - centerX, newLetter.y - centerY) < config.exclusionRadius) {
+            return true;
+        }
+        for (let letter of letters) {
+            if (Math.hypot(newLetter.x - letter.x, newLetter.y - letter.y) < config.letterSize) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function gameLoop() {
+        if (!gameRunning) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw exclusion zone
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, config.exclusionRadius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(200, 200, 200, 0.5)';
+        ctx.fill();
+
+        // Draw focus point
+        ctx.fillStyle = 'black';
+        ctx.fillRect(canvas.width / 2 - 5, canvas.height / 2 - 5, 10, 10);
+
+        // Draw current target letter above focus point
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Find: ${currentLetter}`, canvas.width / 2, canvas.height / 2 - 20);
+
+        letters.forEach(letter => {
+            if (config.motionMode) {
+                letter.x += letter.vx;
+                letter.y += letter.vy;
+
+                // Bounce off walls
+                if (letter.x < 0 || letter.x > canvas.width) letter.vx *= -1;
+                if (letter.y < 0 || letter.y > canvas.height) letter.vy *= -1;
+
+                // Bounce off exclusion zone
+                const dx = letter.x - canvas.width / 2;
+                const dy = letter.y - canvas.height / 2;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < config.exclusionRadius) {
+                    const angle = Math.atan2(dy, dx);
+                    letter.x = canvas.width / 2 + Math.cos(angle) * config.exclusionRadius;
+                    letter.y = canvas.height / 2 + Math.sin(angle) * config.exclusionRadius;
+                    letter.vx = Math.cos(angle) * config.motionSpeed;
+                    letter.vy = Math.sin(angle) * config.motionSpeed;
+                }
+            }
+
+            ctx.font = `${config.letterSize}px Arial`;
+            ctx.fillStyle = letter.char === currentLetter && config.highlightTarget ? 'red' : 'black';
+            ctx.save();
+            ctx.translate(letter.x, letter.y);
+            if (config.rotateLetters) {
+                ctx.rotate(-Math.PI / 2);
+            }
+            ctx.fillText(letter.char, 0, 0);
+            ctx.restore();
+        });
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    canvas.addEventListener('click', (event) => {
+        if (!gameRunning) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        letters.forEach((letter, index) => {
+            if (Math.hypot(x - letter.x, y - letter.y) < config.letterSize / 2 && letter.char === currentLetter) {
+                letters.splice(index, 1);
+                if (currentLetter === 'Z' || letters.length === 0) {
+                    endGame();
+                } else {
+                    currentLetter = String.fromCharCode(currentLetter.charCodeAt(0) + 1);
+                    showConfetti(x, y);
+                }
+            }
+        });
+    });
+
+    function showConfetti(x, y) {
+        const confettiCount = 50;
+        const confetti = [];
+
+        for (let i = 0; i < confettiCount; i++) {
+            confetti.push({
+                x: x,
+                y: y,
+                color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                radius: Math.random() * 3 + 1,
+                vx: Math.random() * 6 - 3,
+                vy: Math.random() * 6 - 3
+            });
+        }
+
+        function animateConfetti() {
+            ctx.save();
+            for (let i = confetti.length - 1; i >= 0; i--) {
+                const c = confetti[i];
+                c.x += c.vx;
+                c.y += c.vy;
+                c.vy += 0.1;
+                c.radius -= 0.02;
+                if (c.radius <= 0) {
+                    confetti.splice(i, 1);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = c.color;
+                    ctx.fill();
+                }
+            }
+            ctx.restore();
+            if (confetti.length > 0) {
+                requestAnimationFrame(animateConfetti);
+            }
+        }
+
+        animateConfetti();
+    }
+
+    function endGame() {
+        gameRunning = false;
+        const endTime = Date.now();
+        const timeTaken = (endTime - startTime) / 1000;
+        showResultsModal(timeTaken);
+        saveResult(timeTaken);
+    }
+
+    function saveResult(time) {
+        const results = JSON.parse(localStorage.getItem('testResults') || '[]');
+        results.push({
+            date: new Date().toISOString(),
+            time: time,
+            config: { ...config }
+        });
+        localStorage.setItem('testResults', JSON.stringify(results));
+    }
+
+    function displayHistory() {
+        const results = JSON.parse(localStorage.getItem('testResults') || '[]');
+        const historyList = document.getElementById('historyList');
+        historyList.innerHTML = '';
+        results.reverse().forEach((result, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                    <strong>Test ${index + 1}</strong><br>
+                    Date: ${new Date(result.date).toLocaleString()}<br>
+                    Time: ${result.time.toFixed(2)} seconds<br>
+                    Letters: ${result.config.letterCount}<br>
+                    Size: ${result.config.letterSize}px<br>
+                    Exclusion: ${result.config.exclusionRadius}px<br>
+                    Motion: ${result.config.motionMode ? 'On' : 'Off'}<br>
+                    Rotation: ${result.config.rotateLetters ? 'On' : 'Off'}<br>
+                    ${result.config.motionMode ? `Speed: ${result.config.motionSpeed}` : ''}
+                    <button class="replayButton">Replay</button>
+                `;
+            const replayButton = li.querySelector('.replayButton');
+            replayButton.addEventListener('click', () => {
+                config = { ...result.config };
+                hideConfigModal();
+                showMainMenu();
+                startGame();
+            });
+            historyList.appendChild(li);
+        });
+    }
+
+    // Event Listeners
+    document.getElementById('startButton').addEventListener('click', showConfigModal);
+    document.getElementById('historyButton').addEventListener('click', showHistoryMenu);
+    document.getElementById('backToMainButton').addEventListener('click', showMainMenu);
+    document.getElementById('startTest').addEventListener('click', () => {
+        hideConfigModal();
+        startGame();
+    });
+    document.getElementById('backToMain').addEventListener('click', () => {
+        hideResultsModal();
+        showMainMenu();
+    });
+    exitButton.addEventListener('click', () => {
+        gameRunning = false;
+        showMainMenu();
+    });
+
+    // Config modal event listeners
+    document.querySelectorAll('#configModal input').forEach(input => {
+        input.addEventListener('input', () => {
+            config[input.id] = input.type === 'checkbox' ? input.checked : Number(input.value);
+            updateConfigUI();
+        });
+    });
+
+    document.querySelectorAll('.close').forEach(closeButton => {
+        closeButton.addEventListener('click', () => {
+            closeButton.closest('.modal').style.display = 'none';
+        });
+    });
+
+    // Initialize
+    showMainMenu();
+</script>
+</body>
+</html>

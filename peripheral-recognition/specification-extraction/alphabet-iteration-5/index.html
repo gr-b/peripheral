@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alphabet Peripheral Vision Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #mainMenu, #configModal, #resultsModal, #historySubmenu {
+            display: none;
+        }
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .exitButton {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background-color: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div id="mainMenu" class="modal">
+    <h1>Alphabet Peripheral Vision Test</h1>
+    <button id="startTestBtn">Start New Test</button>
+    <button id="viewHistoryBtn">View History</button>
+</div>
+
+<div id="configModal" class="modal">
+    <h2>Test Configuration</h2>
+    <div>
+        <label for="letterSize">Letter Size: <span id="letterSizeValue"></span></label>
+        <input type="range" id="letterSize" min="20" max="200" step="5">
+        <div id="letterSizePreview"></div>
+    </div>
+    <div>
+        <label for="numLetters">Number of Letters: <span id="numLettersValue"></span></label>
+        <input type="range" id="numLetters" min="5" max="26" step="1">
+    </div>
+    <div>
+        <label for="exclusionRadius">Exclusion Radius: <span id="exclusionRadiusValue"></span></label>
+        <input type="range" id="exclusionRadius" min="0" max="500" step="25">
+    </div>
+    <div>
+        <input type="checkbox" id="highlightTarget">
+        <label for="highlightTarget">Highlight Target Letter</label>
+    </div>
+    <div>
+        <input type="checkbox" id="motionMode">
+        <label for="motionMode">Enable Motion Mode</label>
+    </div>
+    <div>
+        <input type="checkbox" id="rotateLetters">
+        <label for="rotateLetters">Rotate Letters 90°</label>
+    </div>
+    <div>
+        <label for="motionSpeed">Motion Speed: <span id="motionSpeedValue"></span></label>
+        <input type="range" id="motionSpeed" min="1" max="10" step="1">
+    </div>
+    <div>
+        <input type="checkbox" id="disappearLetters">
+        <label for="disappearLetters">Letters Disappear After Click</label>
+    </div>
+    <button id="startGameBtn">Start Game</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="resultsModal" class="modal">
+    <h2>Test Results</h2>
+    <p>Time taken: <span id="timeTaken"></span></p>
+    <button id="backToMenuBtn">Back to Menu</button>
+</div>
+
+<div id="historySubmenu" class="modal">
+    <h2>Test History</h2>
+    <ul id="historyList"></ul>
+    <button id="backToMenuFromHistoryBtn">Back to Menu</button>
+</div>
+
+<button id="exitGameBtn" class="exitButton" style="display: none;">Exit</button>
+
+<script src="main.js" type="module"></script>
+</body>
+</html>

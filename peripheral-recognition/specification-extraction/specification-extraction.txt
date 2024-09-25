@@ -1,0 +1,961 @@
+Goal: Can we use Claude to extract a complete specification of alphabet-7? That is, produce an english list of requirements
+such that we can use Claude to reliably reproduce the same (or very similar in important ways) program as output?
+
+=================
+
+Please examine the given program closely. What is the purpose of this program? How does the user use the program?
+
+Next, please produce a specification that could be used to reproduce the program, if given to an engineer.
+
+Consider before giving your final specification: Which details are important to include? Which details can be represented at a more high level?
+
+
+===== After prompting for a more 'formal' specification:
+
+# Formal Specification: Alphabet Peripheral Vision Test
+
+## 1. Purpose
+
+The Alphabet Peripheral Vision Test is designed to assess and potentially improve a user's peripheral vision capabilities. By challenging users to identify and interact with letters displayed in their peripheral field of view, the application aims to:
+
+1.1. Measure the user's current peripheral vision acuity.
+1.2. Provide a gamified experience to encourage regular practice and potential improvement of peripheral vision skills.
+1.3. Offer customizable parameters to cater to various skill levels and specific training needs.
+
+## 2. Functional Requirements
+
+### 2.1. User Interface
+
+2.1.1. The application shall provide a full-screen canvas as the main game area.
+2.1.2. A configuration modal shall be available before starting the test, allowing users to adjust test parameters.
+2.1.3. A results modal shall be displayed upon test completion, showing performance metrics.
+
+### 2.2. Test Configuration
+
+The application shall allow users to configure the following parameters:
+
+2.2.1. Letter size (range: 20-200 pixels)
+2.2.2. Number of letters (range: 5-26)
+2.2.3. Test duration (range: 30-180 seconds)
+2.2.4. Exclusion radius (range: 0-500 pixels)
+2.2.5. Option to highlight the target letter
+2.2.6. Option to enable motion mode for letters
+2.2.7. Option to rotate letters 90 degrees counterclockwise
+2.2.8. Motion speed when motion mode is enabled (range: 1-10)
+
+### 2.3. Game Mechanics
+
+2.3.1. Letter Generation and Placement
+   a. The application shall randomly place letters on the canvas.
+   b. Letters shall not overlap with each other or the central exclusion zone.
+   c. In motion mode, letters shall move and bounce off canvas edges and the exclusion zone.
+
+2.3.2. Gameplay
+   a. The current target letter shall be displayed above a central focus point.
+   b. The application shall track user clicks and progress through the alphabet.
+   c. A visual feedback effect (confetti) shall be displayed for successful clicks.
+
+2.3.3. Timing
+   a. The test shall start when the user initiates it from the configuration modal.
+   b. The test shall end when either all letters have been clicked or the configured time limit is reached.
+
+### 2.4. Scoring System
+
+2.4.1. The application shall calculate a score based on:
+   a. Completion time if all letters are clicked before the time limit.
+   b. Number of letters clicked if the time limit is reached.
+
+2.4.2. The score shall be displayed in the results modal upon test completion.
+
+### 2.5. Data Persistence
+
+2.5.1. The application shall store test results in the browser's localStorage.
+2.5.2. Stored data shall include date, time taken, letters clicked, completion status, score, and test configuration.
+
+## 3. Non-Functional Requirements
+
+### 3.1. Performance
+
+3.1.1. The application shall use requestAnimationFrame for smooth animations.
+3.1.2. Letter placement and motion calculations shall be optimized to minimize CPU usage.
+
+### 3.2. Responsiveness
+
+3.2.1. The canvas size shall adjust dynamically to window size changes.
+3.2.2. The application shall be playable on various screen sizes and orientations.
+
+### 3.3. Accessibility
+
+3.3.1. The application shall maintain high contrast between letters and the background.
+3.3.2. Letter sizes shall be configurable to accommodate different visual acuities.
+
+### 3.4. Usability
+
+3.4.1. The configuration interface shall use sliders and checkboxes for intuitive parameter adjustment.
+3.4.2. Clear instructions shall be provided to guide users through the test process.
+
+## 4. Technical Specifications
+
+### 4.1. Development Technologies
+
+4.1.1. The application shall be developed using HTML5, CSS3, and JavaScript.
+4.1.2. The game area shall utilize the HTML5 Canvas API.
+
+### 4.2. Browser Compatibility
+
+4.2.1. The application shall function correctly on the latest versions of major browsers (Chrome, Firefox, Safari, Edge).
+
+### 4.3. Code Structure
+
+4.3.1. The JavaScript code shall be organized into logical functions for maintainability.
+4.3.2. Config
+
+uration parameters shall be stored in a central object for easy modification.
+
+## 5. Future Considerations
+
+5.1. Implementation of user accounts for progress tracking across sessions.
+5.2. Addition of more complex visual elements or distractions to increase difficulty.
+5.3. Integration with external devices (e.g., eye trackers) for more precise measurements.
+
+--------- Human edit on top of that:
+
+# Formal Specification: Alphabet Peripheral Vision Test
+
+## 1. Purpose
+
+The Alphabet Peripheral Vision Test is designed to assess and potentially improve a user's peripheral vision capabilities. By challenging users to identify and interact with letters displayed in their peripheral field of view, the application aims to:
+
+1.1. Measure the user's current peripheral vision acuity.
+1.2. Provide a gamified experience to encourage regular practice and potential improvement of peripheral vision skills.
+1.3. Offer customizable parameters to cater to various skill levels and specific training needs.
+
+## 2. Functional Requirements
+
+### 2.1. User Interface
+
+2.1.1. The application shall provide a full-screen canvas as the main game area.
+2.1.2. A configuration modal shall be available before starting the test, allowing users to adjust test parameters.
+2.1.3. A results modal shall be displayed upon test completion, showing performance metrics.
+
+### 2.2. Test Configuration
+
+The application shall allow users to configure the following parameters:
+
+2.2.1. Letter size (range: 20-200 pixels)
+2.2.2. Number of letters (range: 5-26)
+2.2.3. Test duration (range: 30-180 seconds)
+2.2.4. Exclusion radius (range: 0-500 pixels)
+2.2.5. Option to highlight the target letter
+2.2.6. Option to enable motion mode for letters
+2.2.7. Option to rotate letters 90 degrees counterclockwise
+2.2.8. Motion speed when motion mode is enabled (range: 1-10)
+
+### 2.3. Game Mechanics
+
+2.3.1. Letter Generation and Placement
+   a. The application shall randomly place letters on the canvas.
+   b. Letters shall not overlap with each other or the central exclusion zone.
+   c. In motion mode, letters shall move and bounce off canvas edges and the exclusion zone.
+
+2.3.2. Gameplay
+   a. The current target letter shall be displayed above a central focus point.
+   b. The application shall track user clicks and progress through the alphabet.
+   c. A visual feedback effect (confetti) shall be displayed for successful clicks.
+
+2.3.3. Timing
+   a. The test shall start when the user initiates it from the configuration modal.
+   b. The test shall end when either all letters have been clicked or the configured time limit is reached.
+
+### 2.4. Scoring System
+
+2.4.1. The application shall calculate a score based on:
+   a. Completion time if all letters are clicked before the time limit.
+   b. Number of letters clicked if the time limit is reached.
+
+2.4.2. The score shall be displayed in the results modal upon test completion.
+
+### 2.5. Data Persistence
+
+2.5.1. The application shall store test results in the browser's localStorage.
+2.5.2. Stored data shall include date, time taken, letters clicked, completion status, score, and test configuration.
+
+## 3. Non-Functional Requirements
+
+### 3.1. Performance
+
+3.1.1. The application shall use requestAnimationFrame for smooth animations.
+3.1.2. Letter placement and motion calculations shall be optimized to minimize CPU usage.
+
+### 3.2. Responsiveness
+
+3.2.1. The canvas size shall adjust dynamically to window size changes.
+3.2.2. The application shall be playable on various screen sizes and orientations.
+
+### 3.3. Accessibility
+
+3.3.1. The application shall maintain high contrast between letters and the background.
+3.3.2. Letter sizes shall be configurable to accommodate different visual acuities.
+
+### 3.4. Usability
+
+3.4.1. The configuration interface shall use sliders and checkboxes for intuitive parameter adjustment.
+3.4.2. Clear instructions shall be provided to guide users through the test process.
+
+## 4. Technical Specifications
+
+### 4.1. Development Technologies
+
+4.1.1. The application shall be developed using HTML5, CSS3, and JavaScript.
+4.1.2. The game area shall utilize the HTML5 Canvas API.
+
+### 4.3. Code Structure
+
+4.3.1. The JavaScript code shall be organized into logical functions for maintainability.
+4.3.2. Configuration parameters shall be stored in a central object for easy modification.
+
+========================================== Output: alphabet-reproduced-1.html
+
+1) The letter size configuration slider option should render a letter next to it of that size. The letter should re-render in realtime as the slider is dragged.
+
+2) Remove the duration configuration option. There will be no maximum duration; however long it takes for you to finish, that is your score
+
+3) During the test, right now it's impossible to get back to the menu without refreshing. Instead, we want to add a mostly transparent button to the top right of the screen that enables you to exit the test and go back to the menu.
+
+4) History: On completion of the test, it should store relevant information like score (time to completion) and the values of the configuration options, and the date / time. To localstorage
+
+The user should be able to access history information by clicking a button on the main menu.
+
+in the history submenu, each recorded play instance should also have a button to start a game with the exact same configuration settings as the historical run.
+
+============================== Specification product 2:
+
+# Formal Specification: Alphabet Peripheral Vision Test
+
+## 1. Purpose
+
+The Alphabet Peripheral Vision Test is designed to assess and potentially improve a user's peripheral vision capabilities. By challenging users to identify and interact with letters displayed in their peripheral field of view, the application aims to:
+
+1.1. Measure the user's current peripheral vision acuity.
+1.2. Provide a gamified experience to encourage regular practice and potential improvement of peripheral vision skills.
+1.3. Offer customizable parameters to cater to various skill levels and specific training needs.
+1.4. Track user progress over time through a history feature.
+
+## 2. Functional Requirements
+
+### 2.1. User Interface
+
+2.1.1. The application shall provide a full-screen canvas as the main game area.
+2.1.2. A configuration modal shall be available before starting the test, allowing users to adjust test parameters.
+2.1.3. A results modal shall be displayed upon test completion, showing performance metrics.
+2.1.4. A main menu shall be implemented, featuring options to start a new test, view history, and access settings.
+2.1.5. A history submenu shall be accessible from the main menu, displaying past test results and configuration options.
+
+### 2.2. Test Configuration
+
+The application shall allow users to configure the following parameters:
+
+2.2.1. Letter size (range: 20-200 pixels)
+   a. A live preview of the selected letter size shall be displayed next to the slider.
+   b. The preview letter shall update in real-time as the slider is adjusted.
+2.2.2. Number of letters (range: 5-26)
+2.2.3. Exclusion radius (range: 0-500 pixels)
+2.2.4. Option to highlight the target letter
+2.2.5. Option to enable motion mode for letters
+2.2.6. Option to rotate letters 90 degrees counterclockwise
+2.2.7. Motion speed when motion mode is enabled (range: 1-10)
+
+### 2.3. Game Mechanics
+
+2.3.1. Letter Generation and Placement
+   a. The application shall randomly place letters on the canvas.
+   b. Letters shall not overlap with each other or the central exclusion zone.
+   c. In motion mode, letters shall move and bounce off canvas edges and the exclusion zone.
+
+2.3.2. Gameplay
+   a. The current target letter shall be displayed above a central focus point.
+   b. The application shall track user clicks and progress through the alphabet.
+   c. A visual feedback effect (confetti) shall be displayed for successful clicks.
+   d. A mostly transparent exit button shall be placed in the top right corner of the screen, allowing users to return to the main menu at any time during the test.
+
+2.3.3. Timing
+   a. The test shall start when the user initiates it from the configuration modal.
+   b. The test shall end when all letters have been clicked.
+   c. The total time taken to complete the test shall be recorded as the user's score.
+
+### 2.4. Scoring System
+
+2.4.1. The application shall use the total time taken to complete the test as the primary score.
+2.4.2. The score (time taken) shall be displayed in the results modal upon test completion.
+
+### 2.5. Data Persistence
+
+2.5.1. The application shall store test results in the browser's localStorage.
+2.5.2. Stored data shall include:
+   a. Date and time of the test
+   b. Time taken to complete (score)
+   c. Number of letters used
+   d. All configuration settings used for the test
+
+### 2.6. History Feature
+
+2.6.1. The application shall provide a history submenu accessible from the main menu.
+2.6.2. The history submenu shall display a list of past test results, including date, time taken, and a summary of configuration settings.
+2.6.3. Each entry in the history list shall have a button to start a new test with the exact same configuration settings as the historical run.
+
+## 3. Non-Functional Requirements
+
+### 3.1. Performance
+
+3.1.1. The application shall use requestAnimationFrame for smooth animations.
+3.1.2. Letter placement and motion calculations shall be optimized to minimize CPU usage.
+
+### 3.2. Responsiveness
+
+3.2.1. The canvas size shall adjust dynamically to window size changes.
+3.2.2. The application shall be playable on various screen sizes and orientations.
+
+### 3.3. Accessibility
+
+3.3.1. The application shall maintain high contrast between letters and the background.
+3.3.2. Letter sizes shall be configurable to accommodate different visual acuities.
+
+### 3.4. Usability
+
+3.4.1. The configuration interface shall use sliders and checkboxes for intuitive parameter adjustment.
+3.4.2. Clear instructions shall be provided to guide users through the test process.
+3.4.3. The exit button during the test shall be easily accessible but not intrusive to the gameplay.
+
+## 4. Technical Specifications
+
+### 4.1. Development Technologies
+
+4.1.1. The application shall be developed using HTML5, CSS3, and JavaScript.
+4.1.2. The game area shall utilize the HTML5 Canvas API.
+
+### 4.2. Data Storage
+
+4.2.1. Test results and configuration data shall be stored using the browser's localStorage API.
+4.2.2. The application shall implement functions to save, retrieve, and manage stored data efficiently.
+
+### 4.3. Code Structure
+
+4.3.1. The JavaScript code shall be organized into logical functions and classes for maintainability.
+4.3.2. Configuration parameters shall be stored in a central object for easy modification.
+4.3.3. The application shall implement separate modules for:
+   a. Game logic
+   b. User interface management
+   c. Data persistence
+   d. History feature
+
+### 4.4. User Interface Components
+
+4.4.1. The application shall implement modular UI components for:
+   a. Main menu
+   b. Configuration modal
+   c. Game canvas
+   d. Results modal
+   e. History submenu
+
+4.4.2. UI components shall be designed for easy customization and future expansion.
+
+================================= Produced output: alphabet-reproduced-iteration-2.html
+
+At first, I thought the history feature didn't work. But it was actually because it was loading other history
+I had stored in localStorage from a different experiment, that wasn't compatible.
+
+
+Above is a specification for a self-contained HTML / javascript canvas application.
+
+I want to add the following requirements to the above specification. Please consider all parts of the given specification and produce a full re-write of it, updating any part that need be changed due to the following requirements:
+
+Problems / changes:
+1. Letter size slider should show the integer (in addition to the rendered letter)
+2. Slider snapping: letter size should snap to nearest 5, exclusion radius to nearest 25.
+2. The 'Exit' level button should only exit to the main menu without recording a score (since we didn't finish!).
+Right now it records a score into history.
+2. Each history entry should display the configuration settings it was run with (these are already stored okay so the
+level can be re-run, but not shown in the history menu).
+3. History menu / entries should be styled more aesthetically and organized.
+
+
+============ =============================================================== Specification iteration 2
+
+
+# Formal Specification: Alphabet Peripheral Vision Test
+
+## 1. Purpose
+
+The Alphabet Peripheral Vision Test is designed to assess and potentially improve a user's peripheral vision capabilities. By challenging users to identify and interact with letters displayed in their peripheral field of view, the application aims to:
+
+1.1. Measure the user's current peripheral vision acuity.
+1.2. Provide a gamified experience to encourage regular practice and potential improvement of peripheral vision skills.
+1.3. Offer customizable parameters to cater to various skill levels and specific training needs.
+1.4. Track user progress over time through a detailed history feature.
+
+## 2. Functional Requirements
+
+### 2.1. User Interface
+
+2.1.1. The application shall provide a full-screen canvas as the main game area.
+2.1.2. A configuration modal shall be available before starting the test, allowing users to adjust test parameters.
+2.1.3. A results modal shall be displayed upon test completion, showing performance metrics.
+2.1.4. A main menu shall be implemented, featuring options to start a new test, view history, and access settings.
+2.1.5. A history submenu shall be accessible from the main menu, displaying past test results and configuration options.
+
+### 2.2. Test Configuration
+
+The application shall allow users to configure the following parameters:
+
+2.2.1. Letter size (range: 20-200 pixels)
+   a. A live preview of the selected letter size shall be displayed next to the slider.
+   b. The preview letter shall update in real-time as the slider is adjusted.
+   c. The integer value of the letter size shall be displayed alongside the preview letter.
+   d. The letter size slider shall snap to the nearest multiple of 5.
+2.2.2. Number of letters (range: 5-26)
+2.2.3. Exclusion radius (range: 0-500 pixels)
+   a. The exclusion radius slider shall snap to the nearest multiple of 25.
+2.2.4. Option to highlight the target letter
+2.2.5. Option to enable motion mode for letters
+2.2.6. Option to rotate letters 90 degrees counterclockwise
+2.2.7. Motion speed when motion mode is enabled (range: 1-10)
+
+### 2.3. Game Mechanics
+
+2.3.1. Letter Generation and Placement
+   a. The application shall randomly place letters on the canvas.
+   b. Letters shall not overlap with each other or the central exclusion zone.
+   c. In motion mode, letters shall move and bounce off canvas edges and the exclusion zone.
+
+2.3.2. Gameplay
+   a. The current target letter shall be displayed above a central focus point.
+   b. The application shall track user clicks and progress through the alphabet.
+   c. A visual feedback effect (confetti) shall be displayed for successful clicks.
+   d. A mostly transparent exit button shall be placed in the top right corner of the screen, allowing users to return to the main menu at any time during the test without recording a score.
+
+2.3.3. Timing
+   a. The test shall start when the user initiates it from the configuration modal.
+   b. The test shall end when all letters have been clicked or when the user exits the test.
+   c. The total time taken to complete the test shall be recorded as the user's score only if the test is completed.
+
+### 2.4. Scoring System
+
+2.4.1. The application shall use the total time taken to complete the test as the primary score.
+2.4.2. The score (time taken) shall be displayed in the results modal upon test completion.
+2.4.3. No score shall be recorded if the user exits the test before completion.
+
+### 2.5. Data Persistence
+
+2.5.1. The application shall store test results in the browser's localStorage.
+2.5.2. Stored data shall include:
+   a. Date and time of the test
+   b. Time taken to complete (score)
+   c. Number of letters used
+   d. All configuration settings used for the test
+
+### 2.6. History Feature
+
+2.6.1. The application shall provide a history submenu accessible from the main menu.
+2.6.2. The history submenu shall display a list of past test results, including:
+   a. Date and time of the test
+   b. Time taken to complete (score)
+   c. Number of letters used
+   d. All configuration settings used for the test, including:
+      - Letter size
+      - Exclusion radius
+      - Motion mode (on/off)
+      - Letter rotation (on/off)
+      - Motion speed (if applicable)
+2.6.3. Each entry in the history list shall have a button to start a new test with the exact same configuration settings as the historical run.
+2.6.4. The history menu and entries shall be styled aesthetically and organized for easy readability.
+
+## 3. Non-Functional Requirements
+
+### 3.1. Performance
+
+3.1.1. The application shall use requestAnimationFrame for smooth animations.
+3.1.2. Letter placement and motion calculations shall be optimized to minimize CPU usage.
+
+### 3.2. Responsiveness
+
+3.2.1. The canvas size shall adjust dynamically to window size changes.
+3.2.2. The application shall be playable on various screen sizes and orientations.
+
+### 3.3. Accessibility
+
+3.3.1. The application shall maintain high contrast between letters and the background.
+3.3.2. Letter sizes shall be configurable to accommodate different visual acuities.
+
+### 3.4. Usability
+
+3.4.1. The configuration interface shall use sliders and checkboxes for intuitive parameter adjustment.
+3.4.2. Clear instructions shall be provided to guide users through the test process.
+3.4.3. The exit button during the test shall be easily accessible but not intrusive to the gameplay.
+
+## 4. Technical Specifications
+
+### 4.1. Development Technologies
+
+4.1.1. The application shall be developed using HTML5, CSS3, and JavaScript.
+4.1.2. The game area shall utilize the HTML5 Canvas API.
+
+### 4.2. Data Storage
+
+4.2.1. Test results and configuration data shall be stored using the browser's localStorage API.
+4.2.2. The application shall implement functions to save, retrieve, and manage stored data efficiently.
+
+### 4.3. Code Structure
+
+4.3.1. The JavaScript code shall be organized into logical functions and classes for maintainability.
+4.3.2. Configuration parameters shall be stored in a central object for easy modification.
+4.3.3. The application shall implement separate modules for:
+   a. Game logic
+   b. User interface management
+   c. Data persistence
+   d. History feature
+
+### 4.4. User Interface Components
+
+4.4.1. The application shall implement modular UI components for:
+   a. Main menu
+   b. Configuration modal
+   c. Game canvas
+   d. Results modal
+   e. History submenu
+
+4.4.2. UI components shall be designed for easy customization and future expansion.
+4.4.3. The history submenu shall be styled for improved aesthetics and organization, ensuring clear presentation of all test details and configuration settings.
+===================== ==================================== Output: alphabet-reproduced-iteration-3.html
+
+Interesting differences that the LLM filled in, different across implementations:
+(Differing LLM assumptions / details across implementation runs):
+1. Confetti look and feel is different - sometimes it originates from the center of the letter, sometimes
+    from your mouse. Sometimes it explodes linearly outwards; sometimes it arcs downward with a gravity-like feel
+2. Letters disappear after being clicked, or not?
+
+============================================================
+
+
+Please consider all parts of the formal specification given, and update the entire thing (where applicable) to address the following:
+
+There should be a configuration option 'letters disappear after being correctly clicked'
+Ensure that at all times, letters are only rendered 100% within the screen area / canvas area. We don't want, for example, only the bottom of the letter to be visible if it's rendered very close to the top of the screen; we want the the full letter to always be visible.
+
+
+
+==================== Refined specification 4:
+# Formal Specification: Alphabet Peripheral Vision Test
+
+## 1. Purpose
+
+The Alphabet Peripheral Vision Test is designed to assess and potentially improve a user's peripheral vision capabilities. By challenging users to identify and interact with letters displayed in their peripheral field of view, the application aims to:
+
+1.1. Measure the user's current peripheral vision acuity.
+1.2. Provide a gamified experience to encourage regular practice and potential improvement of peripheral vision skills.
+1.3. Offer customizable parameters to cater to various skill levels and specific training needs.
+1.4. Track user progress over time through a detailed history feature.
+
+## 2. Functional Requirements
+
+### 2.1. User Interface
+
+2.1.1. The application shall provide a full-screen canvas as the main game area.
+2.1.2. A configuration modal shall be available before starting the test, allowing users to adjust test parameters.
+2.1.3. A results modal shall be displayed upon test completion, showing performance metrics.
+2.1.4. A main menu shall be implemented, featuring options to start a new test, view history, and access settings.
+2.1.5. A history submenu shall be accessible from the main menu, displaying past test results and configuration options.
+
+### 2.2. Test Configuration
+
+The application shall allow users to configure the following parameters:
+
+2.2.1. Letter size (range: 20-200 pixels)
+   a. A live preview of the selected letter size shall be displayed next to the slider.
+   b. The preview letter shall update in real-time as the slider is adjusted.
+   c. The integer value of the letter size shall be displayed alongside the preview letter.
+   d. The letter size slider shall snap to the nearest multiple of 5.
+2.2.2. Number of letters (range: 5-26)
+2.2.3. Exclusion radius (range: 0-500 pixels)
+   a. The exclusion radius slider shall snap to the nearest multiple of 25.
+2.2.4. Option to highlight the target letter
+2.2.5. Option to enable motion mode for letters
+2.2.6. Option to rotate letters 90 degrees counterclockwise
+2.2.7. Motion speed when motion mode is enabled (range: 1-10)
+2.2.8. Option to make letters disappear after being correctly clicked
+
+### 2.3. Game Mechanics
+
+2.3.1. Letter Generation and Placement
+   a. The application shall randomly place letters on the canvas.
+   b. Letters shall not overlap with each other or the central exclusion zone.
+   c. In motion mode, letters shall move and bounce off canvas edges and the exclusion zone.
+   d. Letters shall always be rendered entirely within the screen area/canvas area, ensuring full visibility of each letter at all times.
+
+2.3.2. Gameplay
+   a. The current target letter shall be displayed above a central focus point.
+   b. The application shall track user clicks and progress through the alphabet.
+   c. A visual feedback effect (confetti) shall be displayed for successful clicks.
+   d. If the "letters disappear after being correctly clicked" option is enabled, correctly clicked letters shall be removed from the canvas.
+   e. A mostly transparent exit button shall be placed in the top right corner of the screen, allowing users to return to the main menu at any time during the test without recording a score.
+
+2.3.3. Timing
+   a. The test shall start when the user initiates it from the configuration modal.
+   b. The test shall end when all letters have been clicked or when the user exits the test.
+   c. The total time taken to complete the test shall be recorded as the user's score only if the test is completed.
+
+### 2.4. Scoring System
+
+2.4.1. The application shall use the total time taken to complete the test as the primary score.
+2.4.2. The score (time taken) shall be displayed in the results modal upon test completion.
+2.4.3. No score shall be recorded if the user exits the test before completion.
+
+### 2.5. Data Persistence
+
+2.5.1. The application shall store test results in the browser's localStorage.
+2.5.2. Stored data shall include:
+   a. Date and time of the test
+   b. Time taken to complete (score)
+   c. Number of letters used
+   d. All configuration settings used for the test
+
+### 2.6. History Feature
+
+2.6.1. The application shall provide a history submenu accessible from the main menu.
+2.6.2. The history submenu shall display a list of past test results, including:
+   a. Date and time of the test
+   b. Time taken to complete (score)
+   c. Number of letters used
+   d. All configuration settings used for the test, including:
+      - Letter size
+      - Exclusion radius
+      - Motion mode (on/off)
+      - Letter rotation (on/off)
+      - Motion speed (if applicable)
+      - Letters disappear after being correctly clicked (on/off)
+2.6.3. Each entry in the history list shall have a button to start a new test with the exact same configuration settings as the historical run.
+2.6.4. The history menu and entries shall be styled aesthetically and organized for easy readability.
+
+## 3. Non-Functional Requirements
+
+### 3.1. Performance
+
+3.1.1. The application shall use requestAnimationFrame for smooth animations.
+3.1.2. Letter placement and motion calculations shall be optimized to minimize CPU usage.
+
+### 3.2. Responsiveness
+
+3.2.1. The canvas size shall adjust dynamically to window size changes.
+3.2.2. The application shall be playable on various screen sizes and orientations.
+3.2.3. The application shall ensure that letters are always rendered entirely within the screen area/canvas area, regardless of screen size or orientation changes.
+
+### 3.3. Accessibility
+
+3.3.1. The application shall maintain high contrast between letters and the background.
+3.3.2. Letter sizes shall be configurable to accommodate different visual acuities.
+
+### 3.4. Usability
+
+3.4.1. The configuration interface shall use sliders and checkboxes for intuitive parameter adjustment.
+3.4.2. Clear instructions shall be provided to guide users through the test process.
+3.4.3. The exit button during the test shall be easily accessible but not intrusive to the gameplay.
+
+## 4. Technical Specifications
+
+### 4.1. Development Technologies
+
+4.1.1. The application shall be developed using HTML5, CSS3, and JavaScript.
+4.1.2. The game area shall utilize the HTML5 Canvas API.
+
+### 4.2. Data Storage
+
+4.2.1. Test results and configuration data shall be stored using the browser's localStorage API.
+4.2.2. The application shall implement functions to save, retrieve, and manage stored data efficiently.
+
+### 4.3. Code Structure
+
+4.3.1. The JavaScript code shall be organized into logical functions and classes for maintainability.
+4.3.2. Configuration parameters shall be stored in a central object for easy modification.
+4.3.3. The application shall implement separate modules for:
+   a. Game logic
+   b. User interface management
+   c. Data persistence
+   d. History feature
+
+### 4.4. User Interface Components
+
+4.4.1. The application shall implement modular UI components for:
+   a. Main menu
+   b. Configuration modal
+   c. Game canvas
+   d. Results modal
+   e. History submenu
+
+4.4.2. UI components shall be designed for easy customization and future expansion.
+4.4.3. The history submenu shall be styled for improved aesthetics and organization, ensuring clear presentation of all test details and configuration settings.
+
+### 4.5. Letter Rendering and Placement
+
+4.5.1. The application shall implement a mechanism to ensure that letters are always rendered entirely within the screen area/canvas area.
+4.5.2. This mechanism shall account for:
+   a. Different letter sizes
+   b. Various screen sizes and orientations
+   c. Motion of letters (when motion mode is enabled)
+4.5.3. The application shall adjust letter positions in real-time to maintain full visibility, especially during screen resize events or orientation changes.
+======================================================================================================================== Output: alphabet-reproduced-iteration-4.html
+
+
+ASIDE NOTE:
+
+- Definitely the <specification stage> is a valid part of the workflow. Especially when everything can be self-contained in a single file.
+- It is valid to use LLM to rewrite specifications, but likely this isn't a platonic part of the specification-compiler framework
+- Workflow:
+    1) Iterate on specification
+    2) Compile specification into code
+    3) Human agent runs code, examining it for behavioral correctness. Notice and record things that are either incorrect, or
+        we were ignorant to in our specification, or we didn't adequately specify in our specification. Or, just new features we want to add.
+    4) Human agent changes specification, starts from (1)
+- Problem with this workflow: If we have to solve some complex technical issue (and remember that solution), then it may be
+    difficult to re-encode this back into the specification. We may need to use language as precise as code in order
+    to sufficiently solve the problem.
+- Problem with the current workflow shown in this file: I believe we are beginning to get to the limits of Claude's current
+    instruction following / attention abilities for a given output. We are already at the output limit (~450 javascript LOC)
+    - This is why we need to break the problem down into multiple cleanly separated sub-problems: MODULE SPECIFICATIONS
+    "COMPONENT SPECIFICATIONS" | "SPECIFICATION MODULARITY" | ""
+========================================================================================================================
+
+Problems:
+
+1. (same as before) pressing exit saves to history, even though we didn't complete the level
+2. (new issue) Find: X is displayed in the wrong part of the screen (it should be at the dot in the center of the screen)
+3. (new issue) If you specify less than 26 letters, than the game does not finish.
+
+
+========================================================================================================================
+Rather than iterating on the specification, I'm merely going to generate another version from the same specification.
+--> In a practical framework, we may want to in parallel generate N (3-5 versions) at once for the human agent to
+look at. This would give them a good impression of how good of a specification they have written is; showing the variance
+in the output, and giving an indication of how the bias of the specification may need to be changed.
+
+
+----> Output: iteration-5 folder (for some reason it chose to break things down)
+DOESN'T WORK AT ALL!
+
+============> Let's do another generation of specification - 4
+
+Did a few, and they don't work. Perhaps the specification-4 is too complicated now, and
+we need to break things down into subproblems?
+
+---> Attempt: Can we modify the specification to be more concise / simple?
+
+
+========================================== specification simplification
+
+Please identify ways to make this formal specification more concise, less complicated, and stated more simply. Explicitly write down your ideas to do this, including quotations. Then, write up the final revision.
+
+======
+1 - Combine related requirements
+2 - Eliminate redundancies
+3 - Simplify language (be more direct)
+4 - Organize related functionalities / features / behaviors
+5 - Remove requirements / features that aren't needed
+
+============================================> Output: Simplified specification
+
+# Revised Formal Specification: Alphabet Peripheral Vision Test
+
+## 1. Purpose
+
+The Alphabet Peripheral Vision Test assesses and potentially improves users' peripheral vision by challenging them to identify letters in their peripheral field of view.
+
+## 2. Core Features
+
+### 2.1 User Interface and Configuration
+
+- Full-screen canvas for the game area
+- Configuration modal with the following adjustable parameters:
+  • Letter size (20-200 pixels)
+  • Number of letters (5-26)
+  • Exclusion radius (0-500 pixels)
+  • Highlight target letter (on/off)
+  • Motion mode (on/off)
+  • Letter rotation (on/off)
+  • Motion speed (1-10)
+  • Letters disappear after correct click (on/off)
+- Results modal showing performance metrics
+- Main menu with options to start a test, view history, and access settings
+- History submenu displaying past test results and configurations
+
+### 2.2 Gameplay Mechanics
+
+- Random letter placement on the canvas, avoiding overlaps
+- Display current target letter above a central focus point
+- Track user clicks and progress through the alphabet
+- Visual feedback for successful clicks
+- Optional letter motion with edge bouncing
+- Exit button in the top right corner
+
+### 2.3 Scoring and Data
+
+- Use total time to complete as the primary score
+- Store test results and configurations in localStorage
+- Display history of past tests with all relevant details
+
+## 3. Technical Requirements
+
+- Develop using HTML5, CSS3, and JavaScript
+- Use Canvas API for the game area
+- Implement responsive design for various screen sizes
+- Ensure high contrast and configurable letter sizes for accessibility
+- Optimize performance using requestAnimationFrame for animations
+- Organize code into modules for game logic, UI, data persistence, and history feature
+
+## 4. Additional Considerations
+
+- Ensure letters are always fully visible within the canvas
+- Provide clear instructions for users
+- Design intuitive configuration interface using sliders and checkboxes
+- Implement efficient data storage and retrieval functions
+===================================
+
+Please implement the above formal specification as a javascript / HTML self-contained single file.
+Be concise with the code where possible to conserve space.
+
+
+================================================================================== Output: alphabet-simplified-specification-concise-iteration-7.html
+
+1. How much did the simplified / chain of thoughted specification help?
+2. How much did the "Be concise" with the code help?
+Maybe "Be concise with the code where possible to conserve space." helped?
+
+=========================
+New attempt on making formal specification more concise, while retaining important considerations.
+
+-----------
+
+Please rewrite this formal specification in a way that is more concise, more direct, less complicated, and stated more simply.
+But, ensure that specific (even low-level) details are retained. That is, if something like a particular integer bound is specified,
+then ensure that the rewritten specification retains this detail (although you don't necessarily need to state it in the exact same way)
+
+1. Rewrite for brevity / conciseness, while retaining the requirements. If details are specifically written, those must be retained.
+2. Combine related requirements if they can be better stated together
+3. Eliminate redundancies
+4. Organize related functionalities / features / behaviors
+----------------> Output: simpler specification v2
+
+Alphabet Peripheral Vision Test Specification
+Purpose
+
+Assess and improve user's peripheral vision
+Provide gamified experience
+Offer customizable parameters
+Track user progress
+
+Core Functionality
+User Interface
+
+Full-screen canvas game area
+Red dot for user to focus on in center, with current letter being sought "Find <letter>" written above
+Configuration modal before test start
+Results modal after test completion
+Main menu with options: new test, view history, settings
+History submenu accessible from main menu
+
+Test Configuration
+
+Letter size: 20-200 pixels, slider snaps to multiples of 5
+IMPORTANT: Render a letter "A" of this size in real time next to the slider as it is updated
+Number of letters: 5-26
+Exclusion radius: 0-500 pixels, slider snaps to multiples of 25
+Options:
+
+Highlight target letter
+Enable letter motion
+Rotate letters 90° counterclockwise
+Make letters disappear after correct click
+
+
+Motion speed: 1-10 (when motion enabled)
+
+Gameplay Mechanics
+
+Random letter placement on canvas (BUT LETTERS CANNOT BE PLACED OVERLAPPING)
+Letters don't overlap each other or central configured exclusion zone
+IMPORTANT: LETTERS MUST NOT BE PLACED ON TOP OF OTHER LETTERS. LETTERS MUST NOT OVERLAP OR OBSTRUCT OTHER LETTERS.
+Letters always fully visible within canvas
+Target letter displayed above central focus point
+Track user clicks and progress through alphabet
+Visual feedback (confetti) for successful clicks
+Transparent exit button in top-right corner
+
+Scoring
+
+Total time to complete test as primary score
+No score recorded if test exited early
+
+Data Storage
+
+Use localStorage for test results and configurations
+Store: date/time, score, letter count, all configuration settings
+
+History Feature
+
+Button to see history visible on main menu
+List past test results with all configuration details
+IMPORTANT: For each historical test result, show the configuration values that were used.
+Button to start new test with same configuration as historical entry
+
+Technical Requirements
+Performance & Responsiveness
+
+Use requestAnimationFrame for smooth animations
+Optimize letter placement and motion calculations
+Adjust canvas size dynamically to window changes
+Ensure playability on various screen sizes/orientations
+
+Accessibility & Usability
+
+High contrast between letters and background
+Configurable letter sizes
+Intuitive UI with sliders and checkboxes
+Clear instructions for test process
+
+Development
+
+Use HTML5, CSS3, JavaScript
+Utilize HTML5 Canvas API
+Organize code into modules: game logic, UI management, data persistence, history feature
+Implement modular UI components
+
+Letter Rendering
+
+Ensure letters always fully visible within canvas
+Letters should never be placed in a way that overlaps or obstructs each other (but in motion mode they can move across each other)
+Adjust positions in real-time for screen changes
+
+Letters not overlapping each other: I can't underscore enough that this is the MOST IMPORTANT PART OF YOUR SOLUTION.
+Place letters on the canvas randomly, but before you place them, check to make sure that they will not obstruct ANY OTHER LETTERS
+THAT WERE PLACED PREVIOUSLY. This will require a calculation taking into account the positions of the already placed letters,
+and also the size of the letters (the bounding box).
+Again, this is the most important consideration. Please, I'm begging you to make sure that the letters DO NOT OVERLAP EACH OTHER, EVER!
+=======================================================================
+
+Please implement the above formal specification as a javascript / HTML self-contained single file.
+Be concise with the code where possible to conserve space.
+
+============================================================== --> alphabet-simplified-spec-v2-iteration-8.html
+
+Manual edit: add
+Button to see history visible on main menu
+ - Show all configuration values for each test result
+  - Example letter of this size rendered in real time next to the slider
+  Red dot for user to focus on in center, with current letter being sought "Find <letter>" written above
+
+Reflection: We need a standard "language" for specifications. They can't be something that the engineer is unfamiliar with
+1. We need a standard way to define UI screens and refer back to them
+2. We need a standard way to define modular logic and refer back to it's inputs or outputs.
+
+============================================================== --> Alphabet-simplified-spec-v3-iteration-9.html
+Manual edit:
+Letters should never be placed in a way that overlaps or obstructs each other (but in motion mode they can move across each other)
+
+================================================================

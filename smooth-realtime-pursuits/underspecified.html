@@ -1,0 +1,116 @@
+<!-- Write me a javascript canvas test of peripheral vision -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peripheral Vision Test</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+<canvas id="testCanvas" width="800" height="600"></canvas>
+<script>
+    // Canvas setup
+    const canvas = document.getElementById('testCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Variables
+    let centralTarget = { x: 400, y: 300, radius: 10 };
+    let peripheralStimulus = { x: 0, y: 0, radius: 5, visible: false };
+    let score = 0;
+    let missedStimuli = 0;
+    let totalStimuli = 0;
+
+    // Draw central target
+    function drawCentralTarget() {
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(centralTarget.x, centralTarget.y, centralTarget.radius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Draw peripheral stimulus
+    function drawPeripheralStimulus() {
+        if (peripheralStimulus.visible) {
+            ctx.fillStyle = 'blue';
+            ctx.beginPath();
+            ctx.arc(peripheralStimulus.x, peripheralStimulus.y, peripheralStimulus.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // Generate random peripheral stimulus
+    function generateStimulus() {
+        let angle = Math.random() * Math.PI * 2;
+        let distance = Math.random() * 250 + 100; // Between 100 and 350 pixels from center
+        peripheralStimulus.x = centralTarget.x + Math.cos(angle) * distance;
+        peripheralStimulus.y = centralTarget.y + Math.sin(angle) * distance;
+        peripheralStimulus.visible = true;
+        totalStimuli++;
+    }
+
+    // Main game loop
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawCentralTarget();
+        drawPeripheralStimulus();
+
+        // Display score
+        ctx.fillStyle = 'black';
+        ctx.font = '20px Arial';
+        ctx.fillText(`Score: ${score}`, 10, 30);
+        ctx.fillText(`Missed: ${missedStimuli}`, 10, 60);
+
+        // Randomly generate new stimulus
+        if (!peripheralStimulus.visible && Math.random() < 0.02) {
+            generateStimulus();
+        }
+
+        // Remove stimulus if not clicked within 2 seconds
+        if (peripheralStimulus.visible) {
+            setTimeout(() => {
+                if (peripheralStimulus.visible) {
+                    peripheralStimulus.visible = false;
+                    missedStimuli++;
+                }
+            }, 2000);
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Handle mouse clicks
+    canvas.addEventListener('click', (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const clickY = event.clientY - rect.top;
+
+        if (peripheralStimulus.visible) {
+            const distance = Math.sqrt(
+                Math.pow(clickX - peripheralStimulus.x, 2) + Math.pow(clickY - peripheralStimulus.y, 2)
+            );
+
+            if (distance <= peripheralStimulus.radius * 2) {
+                score++;
+                peripheralStimulus.visible = false;
+            }
+        }
+    });
+
+    // Start the game
+    gameLoop();
+</script>
+</body>
+</html>

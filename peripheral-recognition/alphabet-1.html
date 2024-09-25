@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alphabet Peripheral Vision Test</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        #gameCanvas {
+            display: block;
+        }
+        #configModal, #resultModal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<div id="configModal">
+    <h2>Configure Test</h2>
+    <label for="letterSize">Letter Size: <span id="letterSizeValue">30</span></label>
+    <input type="range" id="letterSize" min="20" max="50" value="30"><br>
+    <label for="letterCount">Number of Letters: <span id="letterCountValue">26</span></label>
+    <input type="range" id="letterCount" min="5" max="26" value="26"><br>
+    <label for="duration">Duration (seconds): <span id="durationValue">60</span></label>
+    <input type="range" id="duration" min="30" max="180" value="60"><br>
+    <button id="startButton">Start Test</button>
+</div>
+
+<div id="resultModal" class="hidden">
+    <h2>Test Results</h2>
+    <p>Time taken: <span id="timeTaken"></span> seconds</p>
+    <p>Letters clicked: <span id="lettersClicked"></span></p>
+    <button id="restartButton">Restart</button>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const configModal = document.getElementById('configModal');
+    const resultModal = document.getElementById('resultModal');
+
+    let letters = [];
+    let currentLetterIndex = 0;
+    let startTime, endTime;
+    let config = {
+        letterSize: 30,
+        letterCount: 26,
+        duration: 60
+    };
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    function generateLetters() {
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        letters = [];
+        for (let i = 0; i < config.letterCount; i++) {
+            letters.push({
+                letter: alphabet[i],
+                x: Math.random() * (canvas.width - config.letterSize),
+                y: Math.random() * (canvas.height - config.letterSize)
+            });
+        }
+    }
+
+    function drawLetters() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw center dot
+        ctx.fillStyle = 'black';
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw current target letter above center dot
+        ctx.font = '20px Arial';
+        ctx.fillText(letters[currentLetterIndex].letter, canvas.width / 2 - 10, canvas.height / 2 - 20);
+
+        // Draw letters
+        ctx.font = `${config.letterSize}px Arial`;
+        letters.forEach((letter, index) => {
+            ctx.fillStyle = index === currentLetterIndex ? 'red' : 'black';
+            ctx.fillText(letter.letter, letter.x, letter.y);
+        });
+    }
+
+    function handleClick(event) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        const currentLetter = letters[currentLetterIndex];
+        const distance = Math.sqrt((x - currentLetter.x) ** 2 + (y - currentLetter.y) ** 2);
+
+        if (distance <= 50) {
+            currentLetterIndex++;
+            if (currentLetterIndex >= config.letterCount) {
+                endGame();
+            } else {
+                drawLetters();
+            }
+        }
+    }
+
+    function startGame() {
+        configModal.classList.add('hidden');
+        resizeCanvas();
+        generateLetters();
+        drawLetters();
+        startTime = Date.now();
+        canvas.addEventListener('click', handleClick);
+        setTimeout(endGame, config.duration * 1000);
+    }
+
+    function endGame() {
+        canvas.removeEventListener('click', handleClick);
+        endTime = Date.now();
+        const timeTaken = (endTime - startTime) / 1000;
+        document.getElementById('timeTaken').textContent = timeTaken.toFixed(2);
+        document.getElementById('lettersClicked').textContent = currentLetterIndex;
+        resultModal.classList.remove('hidden');
+
+        // Save results to localStorage
+        const results = JSON.parse(localStorage.getItem('testResults') || '[]');
+        results.push({
+            date: new Date().toISOString(),
+            timeTaken,
+            lettersClicked: currentLetterIndex,
+            config: { ...config }
+        });
+        localStorage.setItem('testResults', JSON.stringify(results));
+    }
+
+    document.getElementById('startButton').addEventListener('click', startGame);
+    document.getElementById('restartButton').addEventListener('click', () => {
+        resultModal.classList.add('hidden');
+        configModal.classList.remove('hidden');
+    });
+
+    // Update configuration values
+    ['letterSize', 'letterCount', 'duration'].forEach(param => {
+        const input = document.getElementById(param);
+        const value = document.getElementById(`${param}Value`);
+        input.addEventListener('input', () => {
+            config[param] = parseInt(input.value);
+            value.textContent = input.value;
+        });
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+</script>
+</body>
+</html>

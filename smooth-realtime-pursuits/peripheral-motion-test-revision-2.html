@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Peripheral Vision Test</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #game-canvas {
+            display: block;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #skip-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+<button id="skip-button" style="display: none;">Skip</button>
+
+<div id="config-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Configure Test</h2>
+        <label for="difficulty">Difficulty (Speed):</label>
+        <input type="range" id="difficulty" min="1" max="10" value="5"><br>
+        <label for="radius">Radius:</label>
+        <input type="range" id="radius" min="10" max="90" value="40"><br>
+        <label for="wiggle">Wiggle Amount:</label>
+        <input type="range" id="wiggle" min="0" max="50" value="20"><br>
+        <label for="min-direction-change">Min Direction Change Time (s):</label>
+        <input type="number" id="min-direction-change" min="1" max="10" value="2"><br>
+        <label for="max-direction-change">Max Direction Change Time (s):</label>
+        <input type="number" id="max-direction-change" min="2" max="20" value="10"><br>
+        <label for="duration">Test Duration (s):</label>
+        <input type="number" id="duration" min="10" max="300" value="60"><br>
+        <button id="start-test">Start Test</button>
+        <button id="view-history">View History</button>
+    </div>
+</div>
+
+<div id="results-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Test Results</h2>
+        <p>Your average score: <span id="final-score"></span></p>
+        <canvas id="results-graph"></canvas>
+        <button id="restart-test">Restart Test</button>
+        <button id="view-history">View History</button>
+    </div>
+</div>
+
+<div id="history-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Test History</h2>
+        <canvas id="history-graph"></canvas>
+        <div id="history-list"></div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const configModal = document.getElementById('config-modal');
+    const resultsModal = document.getElementById('results-modal');
+    const historyModal = document.getElementById('history-modal');
+    const startButton = document.getElementById('start-test');
+    const restartButton = document.getElementById('restart-test');
+    const viewHistoryButtons = document.querySelectorAll('#view-history');
+    const closeButtons = document.getElementsByClassName('close');
+    const skipButton = document.getElementById('skip-button');
+
+    let config = {
+        difficulty: 5,
+        radius: 0.4,
+        wiggle: 0.2,
+        minDirectionChange: 2,
+        maxDirectionChange: 10,
+        duration: 60
+    };
+
+    let gameState = {
+        dotX: 0,
+        dotY: 0,
+        angle: 0,
+        direction: 1,
+        nextDirectionChange: 0,
+        mouseX: 0,
+        mouseY: 0,
+        scores: [],
+        timeLeft: 0,
+        positions: [],
+        isReplay: false,
+        replayIndex: 0
+    };
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    function showModal(modal) {
+        modal.style.display = 'block';
+    }
+
+    function hideModal(modal) {
+        modal.style.display = 'none';
+    }
+
+    function startTest() {
+        config.difficulty = document.getElementById('difficulty').value;
+        config.radius = document.getElementById('radius').value / 100;
+        config.wiggle = document.getElementById('wiggle').value / 100;
+        config.minDirectionChange = document.getElementById('min-direction-change').value;
+        config.maxDirectionChange = document.getElementById('max-direction-change').value;
+        config.duration = document.getElementById('duration').value;
+
+        hideModal(configModal);
+        gameState = {
+            dotX: 0,
+            dotY: 0,
+            angle: 0,
+            direction: 1,
+            nextDirectionChange: 0,
+            mouseX: 0,
+            mouseY: 0,
+            scores: [],
+            timeLeft: config.duration,
+            positions: [],
+            isReplay: false,
+            replayIndex: 0
+        };
+        gameState.nextDirectionChange = Date.now() + getRandomDirectionChangeTime();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function getRandomDirectionChangeTime() {
+        return (Math.random() * (config.maxDirectionChange - config.minDirectionChange) + config.minDirectionChange) * 1000;
+    }
+
+    function gameLoop(timestamp) {
+        if (gameState.timeLeft <= 0) {
+            showResults();
+            return;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (gameState.isReplay) {
+            const position = gameState.positions[gameState.replayIndex];
+            gameState.dotX = position.dotX;
+            gameState.dotY = position.dotY;
+            gameState.mouseX = position.mouseX;
+            gameState.mouseY = position.mouseY;
+            gameState.timeLeft = config.duration - (gameState.replayIndex * 20 / 1000);
+            gameState.replayIndex++;
+            if (gameState.replayIndex >= gameState.positions.length) {
+                gameState.isReplay = false;
+                showResults();
+                return;
+            }
+        } else {
+            // Update dot position
+            const speed = config.difficulty * 0.001;
+            gameState.angle += speed * gameState.direction;
+            const baseRadius = Math.min(canvas.width, canvas.height) * config.radius;
+            const wiggleAmount = baseRadius * config.wiggle;
+            const currentRadius = baseRadius + Math.sin(gameState.angle * 5) * wiggleAmount;
+            gameState.dotX = canvas.width / 2 + Math.cos(gameState.angle) * currentRadius;
+            gameState.dotY = canvas.height / 2 + Math.sin(gameState.angle) * currentRadius;
+
+            // Check for direction change
+            if (Date.now() > gameState.nextDirectionChange) {
+                gameState.direction *= -1;
+                gameState.nextDirectionChange = Date.now() + getRandomDirectionChangeTime();
+            }
+
+            // Record positions every 20ms
+            if (timestamp % 20 < 16) {  // 16ms is roughly one frame at 60 FPS
+                gameState.positions.push({
+                    dotX: gameState.dotX,
+                    dotY: gameState.dotY,
+                    mouseX: gameState.mouseX,
+                    mouseY: gameState.mouseY
+                });
+            }
+        }
+
+        // Draw center dot
+        ctx.fillStyle = 'black';
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw moving red dot
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(gameState.dotX, gameState.dotY, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw line from mouse to red dot
+        const distance = Math.hypot(gameState.mouseX - gameState.dotX, gameState.mouseY - gameState.dotY);
+        const maxDistance = Math.hypot(canvas.width, canvas.height);
+        const opacity = Math.max(0, 1 - distance / maxDistance);
+        ctx.strokeStyle = `rgba(255, 0, 0, ${opacity})`;
+        ctx.beginPath();
+        ctx.moveTo(gameState.mouseX, gameState.mouseY);
+        ctx.lineTo(gameState.dotX, gameState.dotY);
+        ctx.stroke();
+
+        // Update and draw timer
+        gameState.timeLeft -= 1 / 60;  // Assuming 60 FPS
+        ctx.fillStyle = 'black';
+        ctx.font = '20px Arial';
+        ctx.fillText(`Time: ${Math.ceil(gameState.timeLeft)}s`, 10, 30);
+
+        // Record score every 100ms
+        if (timestamp % 100 < 16) {  // 16ms is roughly one frame at 60 FPS
+            gameState.scores.push(distance);
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    function showResults() {
+        const averageScore = gameState.scores.reduce((a, b) => a + b, 0) / gameState.scores.length;
+        document.getElementById('final-score').textContent = averageScore.toFixed(2);
+
+        // Draw results graph
+        const resultsGraph = document.getElementById('results-graph');
+        resultsGraph.width = 400;
+        resultsGraph.height = 200;
+        const graphCtx = resultsGraph.getContext('2d');
+        drawGraph(graphCtx, gameState.scores, 'Time', 'Distance', resultsGraph.width, resultsGraph.height);
+
+        // Save score and positions to localStorage
+        const history = JSON.parse(localStorage.getItem('testHistory') || '[]');
+        history.push({
+            date: new Date().toISOString(),
+            score: averageScore,
+            positions: gameState.positions
+        });
+        localStorage.setItem('testHistory', JSON.stringify(history));
+
+        showModal(resultsModal);
+    }
+
+    function drawGraph(ctx, data, xLabel, yLabel, width, height) {
+        const padding = 40;
+        const graphWidth = width - padding * 2;
+        const graphHeight = height - padding * 2;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+
+        // Draw axes
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.stroke();
+
+        // Draw labels
+        ctx.fillStyle = 'black';
+        ctx.font = '12px Arial';
+        ctx.fillText(xLabel, width / 2, height - padding / 2);
+        ctx.save();
+        ctx.translate(padding / 2, height / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(yLabel, 0, 0);
+        ctx.restore();
+
+        // Draw data points
+        const xStep = graphWidth / (data.length - 1);
+        const yScale = graphHeight / Math.max(...data);
+        ctx.beginPath();
+        ctx.moveTo(padding, height - padding - data[0] * yScale);
+        for (let i = 1; i < data.length; i++) {
+            ctx.lineTo(padding + i * xStep, height - padding - data[i] * yScale);
+        }
+        ctx.strokeStyle = 'blue';
+        ctx.stroke();
+    }
+
+    function showHistory() {
+        const history = JSON.parse(localStorage.getItem('testHistory') || '[]');
+        const historyGraph = document.getElementById('history-graph');
+        historyGraph.width = 400;
+        historyGraph.height = 200;
+        const graphCtx = historyGraph.getContext('2d');
+        drawGraph(graphCtx, history.map(h => h.score), 'Attempt', 'Score', historyGraph.width, historyGraph.height);
+
+        const historyList = document.getElementById('history-list');
+        historyList.innerHTML = '';
+        history.forEach((attempt, index) => {
+            const item = document.createElement('div');
+            item.textContent = `Attempt ${index + 1}: ${attempt.score.toFixed(2)}`;
+            const replayButton = document.createElement('button');
+            replayButton.textContent = 'Replay';
+            replayButton.onclick = () => replayAttempt(attempt);
+            item.appendChild(replayButton);
+            historyList.appendChild(item);
+        });
+
+        showModal(historyModal);
+    }
+
+    function replayAttempt(attempt) {
+        hideModal(historyModal);
+        gameState = {
+            ...gameState,
+            isReplay: true,
+            replayIndex: 0,
+            positions: attempt.positions,
+            timeLeft: config.duration
+        };
+        skipButton.style.display = 'block';
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Event Listeners
+    window.addEventListener('resize', resizeCanvas);
+    canvas.addEventListener('mousemove', (e) => {
+        if (!gameState.isReplay) {
+            gameState.mouseX = e.clientX;
+            gameState.mouseY = e.clientY;
+        }
+    });
+
+    startButton.addEventListener('click', startTest);
+    restartButton.addEventListener('click', () => {
+        hideModal(resultsModal);
+        showModal(configModal);
+    });
+    viewHistoryButtons.forEach(button => button.addEventListener('click', showHistory));
+    skipButton.addEventListener('click', () => {
+        gameState.isReplay = false;
+        skipButton.style.display = 'none';
+        showResults();
+    });
+
+    for (let closeButton of closeButtons) {
+        closeButton.addEventListener('click', () => hideModal(closeButton.parentElement.parentElement));
+    }
+
+    // Initialize
+    resizeCanvas();
+    showModal(configModal);
+</script>
+</body>
+</html>

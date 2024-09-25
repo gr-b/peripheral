@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alphabet Peripheral Vision Test</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            display: block;
+            background-color: #f0f0f0;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #mainMenu, #historyMenu {
+            text-align: center;
+            padding: 20px;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #configForm {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            align-items: center;
+        }
+        #letterPreview {
+            font-size: 24px;
+            text-align: center;
+            margin-top: 10px;
+        }
+        #historyList {
+            list-style-type: none;
+            padding: 0;
+        }
+        #historyList li {
+            background-color: #f0f0f0;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #exitButton {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div id="mainMenu">
+    <h1>Alphabet Peripheral Vision Test</h1>
+    <button id="startButton">Start New Test</button>
+    <button id="historyButton">View History</button>
+</div>
+
+<div id="historyMenu" style="display: none;">
+    <h2>Test History</h2>
+    <ul id="historyList"></ul>
+    <button id="backToMainButton">Back to Main Menu</button>
+</div>
+
+<canvas id="gameCanvas" style="display: none;"></canvas>
+
+<div id="configModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Test Configuration</h2>
+        <form id="configForm">
+            <label for="letterSize">Letter Size (px):</label>
+            <input type="range" id="letterSize" min="20" max="200" step="5" value="50">
+
+            <label for="numLetters">Number of Letters:</label>
+            <input type="range" id="numLetters" min="5" max="26" step="1" value="10">
+
+            <label for="exclusionRadius">Exclusion Radius (px):</label>
+            <input type="range" id="exclusionRadius" min="0" max="500" step="25" value="100">
+
+            <label for="highlightTarget">Highlight Target Letter:</label>
+            <input type="checkbox" id="highlightTarget">
+
+            <label for="motionMode">Enable Motion Mode:</label>
+            <input type="checkbox" id="motionMode">
+
+            <label for="rotateLetters">Rotate Letters:</label>
+            <input type="checkbox" id="rotateLetters">
+
+            <label for="motionSpeed">Motion Speed:</label>
+            <input type="range" id="motionSpeed" min="1" max="10" step="1" value="5">
+
+            <label for="disappearLetters">Letters Disappear After Click:</label>
+            <input type="checkbox" id="disappearLetters">
+        </form>
+        <div id="letterPreview">A</div>
+        <button id="startTestButton">Start Test</button>
+    </div>
+</div>
+
+<div id="resultsModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Test Results</h2>
+        <p>Time taken: <span id="timeTaken"></span> seconds</p>
+        <button id="backToMenuButton">Back to Main Menu</button>
+    </div>
+</div>
+
+<button id="exitButton" style="display: none;">Exit</button>
+
+<script>
+    // Game state
+    let gameState = {
+        letters: [],
+        targetLetter: 'A',
+        startTime: null,
+        config: {},
+        canvasWidth: 0,
+        canvasHeight: 0
+    };
+
+    // DOM elements
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const configModal = document.getElementById('configModal');
+    const resultsModal = document.getElementById('resultsModal');
+    const mainMenu = document.getElementById('mainMenu');
+    const historyMenu = document.getElementById('historyMenu');
+    const startButton = document.getElementById('startButton');
+    const historyButton = document.getElementById('historyButton');
+    const backToMainButton = document.getElementById('backToMainButton');
+    const startTestButton = document.getElementById('startTestButton');
+    const backToMenuButton = document.getElementById('backToMenuButton');
+    const exitButton = document.getElementById('exitButton');
+    const timeTakenSpan = document.getElementById('timeTaken');
+    const historyList = document.getElementById('historyList');
+
+    // Configuration form elements
+    const letterSizeInput = document.getElementById('letterSize');
+    const numLettersInput = document.getElementById('numLetters');
+    const exclusionRadiusInput = document.getElementById('exclusionRadius');
+    const highlightTargetInput = document.getElementById('highlightTarget');
+    const motionModeInput = document.getElementById('motionMode');
+    const rotateLettersInput = document.getElementById('rotateLetters');
+    const motionSpeedInput = document.getElementById('motionSpeed');
+    const disappearLettersInput = document.getElementById('disappearLetters');
+    const letterPreview = document.getElementById('letterPreview');
+
+    // Event listeners
+    startButton.addEventListener('click', showConfigModal);
+    historyButton.addEventListener('click', showHistoryMenu);
+    backToMainButton.addEventListener('click', showMainMenu);
+    startTestButton.addEventListener('click', startTest);
+    backToMenuButton.addEventListener('click', showMainMenu);
+    exitButton.addEventListener('click', exitTest);
+    canvas.addEventListener('click', handleCanvasClick);
+    window.addEventListener('resize', resizeCanvas);
+
+    // Close modal when clicking on <span> (x)
+    document.querySelectorAll('.close').forEach(closeBtn => {
+        closeBtn.addEventListener('click', function() {
+            this.closest('.modal').style.display = 'none';
+        });
+    });
+
+    // Update letter preview
+    letterSizeInput.addEventListener('input', updateLetterPreview);
+
+    function updateLetterPreview() {
+        letterPreview.style.fontSize = `${letterSizeInput.value}px`;
+        letterPreview.textContent = `A (${letterSizeInput.value}px)`;
+    }
+
+    function showConfigModal() {
+        mainMenu.style.display = 'none';
+        configModal.style.display = 'block';
+        updateLetterPreview();
+    }
+
+    function showHistoryMenu() {
+        mainMenu.style.display = 'none';
+        historyMenu.style.display = 'block';
+        displayHistory();
+    }
+
+    function showMainMenu() {
+        mainMenu.style.display = 'block';
+        historyMenu.style.display = 'none';
+        canvas.style.display = 'none';
+        configModal.style.display = 'none';
+        resultsModal.style.display = 'none';
+        exitButton.style.display = 'none';
+    }
+
+    function startTest() {
+        gameState.config = {
+            letterSize: parseInt(letterSizeInput.value),
+            numLetters: parseInt(numLettersInput.value),
+            exclusionRadius: parseInt(exclusionRadiusInput.value),
+            highlightTarget: highlightTargetInput.checked,
+            motionMode: motionModeInput.checked,
+            rotateLetters: rotateLettersInput.checked,
+            motionSpeed: parseInt(motionSpeedInput.value),
+            disappearLetters: disappearLettersInput.checked
+        };
+
+        configModal.style.display = 'none';
+        canvas.style.display = 'block';
+        exitButton.style.display = 'block';
+        resizeCanvas();
+        initGame();
+        gameLoop();
+    }
+
+    function exitTest() {
+        showMainMenu();
+    }
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        gameState.canvasWidth = canvas.width;
+        gameState.canvasHeight = canvas.height;
+    }
+
+    function initGame() {
+        gameState.letters = [];
+        gameState.targetLetter = 'A';
+        gameState.startTime = Date.now();
+
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const selectedLetters = alphabet.slice(0, gameState.config.numLetters);
+
+        for (let letter of selectedLetters) {
+            gameState.letters.push({
+                char: letter,
+                x: Math.random() * (canvas.width - gameState.config.letterSize),
+                y: Math.random() * (canvas.height - gameState.config.letterSize),
+                vx: gameState.config.motionMode ? (Math.random() - 0.5) * gameState.config.motionSpeed : 0,
+                vy: gameState.config.motionMode ? (Math.random() - 0.5) * gameState.config.motionSpeed : 0
+            });
+        }
+    }
+
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        updateLetterPositions();
+        drawLetters();
+        drawTargetLetter();
+        drawExclusionZone();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function updateLetterPositions() {
+        if (!gameState.config.motionMode) return;
+
+        gameState.letters.forEach(letter => {
+            letter.x += letter.vx;
+            letter.y += letter.vy;
+
+            // Bounce off walls
+            if (letter.x < 0 || letter.x + gameState.config.letterSize > canvas.width) {
+                letter.vx *= -1;
+            }
+            if (letter.y < 0 || letter.y + gameState.config.letterSize > canvas.height) {
+                letter.vy *= -1;
+            }
+
+            // Bounce off exclusion zone
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const dx = letter.x + gameState.config.letterSize / 2 - centerX;
+            const dy = letter.y + gameState.config.letterSize / 2 - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < gameState.config.exclusionRadius + gameState.config.letterSize / 2) {
+                const angle = Math.atan2(dy, dx);
+                letter.vx = Math.cos(angle) * gameState.config.motionSpeed;
+                letter.vy = Math.sin(angle) * gameState.config.motionSpeed;
+            }
+        });
+    }
+
+    function drawLetters() {
+        ctx.font = `${gameState.config.letterSize}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        gameState.letters.forEach(letter => {
+            ctx.save();
+            ctx.translate(letter.x + gameState.config.letterSize / 2, letter.y + gameState.config.letterSize / 2);
+            if (gameState.config.rotateLetters) {
+                ctx.rotate(-Math.PI / 2);
+            }
+            if (gameState.config.highlightTarget && letter.char === gameState.targetLetter) {
+                ctx.fillStyle = 'red';
+            } else {
+                ctx.fillStyle = 'black';
+            }
+            ctx.fillText(letter.char, 0, 0);
+            ctx.restore();
+        });
+    }
+
+    function drawTargetLetter() {
+        ctx.font = '24px Arial';
+        ctx.fillStyle = 'black';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Find: ${gameState.targetLetter}`, canvas.width / 2, 30);
+    }
+
+    function drawExclusionZone() {
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, gameState.config.exclusionRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(200, 200, 200, 0.5)';
+        ctx.fill();
+    }
+
+    function handleCanvasClick(event) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        gameState.letters.forEach((letter, index) => {
+            if (x >= letter.x && x <= letter.x + gameState.config.letterSize &&
+                y >= letter.y && y <= letter.y + gameState.config.letterSize) {
+                if (letter.char === gameState.targetLetter) {
+                    if (gameState.config.disappearLetters) {
+                        gameState.letters.splice(index, 1);
+                    }
+                    nextLetter();
+                }
+            }
+        });
+    }
+
+    function nextLetter() {
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const currentIndex = alphabet.indexOf(gameState.targetLetter);
+        if (currentIndex < gameState.config.numLetters - 1) {
+            gameState.targetLetter = alphabet[currentIndex + 1];
+        } else {
+            endTest();
+        }
+    }
+
+    function endTest() {
+        const endTime = Date.now();
+        const timeTaken = (endTime - gameState.startTime) / 1000;
+        timeTakenSpan.textContent = timeTaken.toFixed(2);
+
+        // Save test results
+        const testResult = {
+            date: new Date().toISOString(),
+            timeTaken: timeTaken,
+            config: gameState.config
+        };
+        saveTestResult(testResult);
+
+        // Display results modal
+        canvas.style.display = 'none';
+        exitButton.style.display = 'none';
+        resultsModal.style.display = 'block';
+    }
+
+    function saveTestResult(result) {
+        let history = JSON.parse(localStorage.getItem('testHistory')) || [];
+        history.push(result);
+        localStorage.setItem('testHistory', JSON.stringify(history));
+    }
+
+    function displayHistory() {
+        const history = JSON.parse(localStorage.getItem('testHistory')) || [];
+        historyList.innerHTML = '';
+
+        history.forEach((result, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                    <strong>Date:</strong> ${new Date(result.date).toLocaleString()}<br>
+                    <strong>Time taken:</strong> ${result.timeTaken.toFixed(2)} seconds<br>
+                    <strong>Letters:</strong> ${result.config.numLetters}<br>
+                    <strong>Letter size:</strong> ${result.config.letterSize}px<br>
+                    <strong>Exclusion radius:</strong> ${result.config.exclusionRadius}px<br>
+                    <strong>Motion:</strong> ${result.config.motionMode ? 'On' : 'Off'}<br>
+                    <strong>Rotation:</strong> ${result.config.rotateLetters ? 'On' : 'Off'}<br>
+                    <strong>Motion speed:</strong> ${result.config.motionSpeed}<br>
+                    <strong>Disappear after click:</strong> ${result.config.disappearLetters ? 'On' : 'Off'}<br>
+                    <button class="replayButton" data-index="${index}">Replay with these settings</button>
+                `;
+            historyList.appendChild(li);
+        });
+
+        // Add event listeners to replay buttons
+        document.querySelectorAll('.replayButton').forEach(button => {
+            button.addEventListener('click', function() {
+                const index = this.getAttribute('data-index');
+                replayTest(history[index].config);
+            });
+        });
+    }
+
+    function replayTest(config) {
+        // Set form values based on the selected configuration
+        letterSizeInput.value = config.letterSize;
+        numLettersInput.value = config.numLetters;
+        exclusionRadiusInput.value = config.exclusionRadius;
+        highlightTargetInput.checked = config.highlightTarget;
+        motionModeInput.checked = config.motionMode;
+        rotateLettersInput.checked = config.rotateLetters;
+        motionSpeedInput.value = config.motionSpeed;
+        disappearLettersInput.checked = config.disappearLetters;
+
+        // Start the test with the selected configuration
+        historyMenu.style.display = 'none';
+        startTest();
+    }
+
+    // Confetti effect for successful clicks
+    function createConfetti(x, y) {
+        const confettiCount = 50;
+        const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+
+        for (let i = 0; i < confettiCount; i++) {
+            const confetti = document.createElement('div');
+            confetti.style.position = 'absolute';
+            confetti.style.left = `${x}px`;
+            confetti.style.top = `${y}px`;
+            confetti.style.width = '10px';
+            confetti.style.height = '10px';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.pointerEvents = 'none';
+            document.body.appendChild(confetti);
+
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = Math.random() * 5 + 5;
+            const vx = Math.cos(angle) * velocity;
+            const vy = Math.sin(angle) * velocity;
+
+            let confettiY = y;
+            let confettiX = x;
+            let opacity = 1;
+
+            function animateConfetti() {
+                confettiY += vy;
+                confettiX += vx;
+                vy += 0.1; // gravity
+                opacity -= 0.02;
+
+                confetti.style.top = `${confettiY}px`;
+                confetti.style.left = `${confettiX}px`;
+                confetti.style.opacity = opacity;
+
+                if (opacity > 0) {
+                    requestAnimationFrame(animateConfetti);
+                } else {
+                    document.body.removeChild(confetti);
+                }
+            }
+
+            requestAnimationFrame(animateConfetti);
+        }
+    }
+
+    // Update handleCanvasClick function to include confetti effect
+    function handleCanvasClick(event) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        gameState.letters.forEach((letter, index) => {
+            if (x >= letter.x && x <= letter.x + gameState.config.letterSize &&
+                y >= letter.y && y <= letter.y + gameState.config.letterSize) {
+                if (letter.char === gameState.targetLetter) {
+                    createConfetti(event.clientX, event.clientY);
+                    if (gameState.config.disappearLetters) {
+                        gameState.letters.splice(index, 1);
+                    }
+                    nextLetter();
+                }
+            }
+        });
+    }
+
+    // Initialize the application
+    showMainMenu();
+</script>
+</body>
+</html>

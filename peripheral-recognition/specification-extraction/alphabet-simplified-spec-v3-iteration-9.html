@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alphabet Peripheral Vision Test</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; }
+        #gameCanvas { display: none; }
+        #mainMenu, #configModal, #resultsModal { text-align: center; padding: 20px; }
+        .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; }
+        button { margin: 10px; padding: 10px; }
+        #historyList { list-style-type: none; padding: 0; }
+        #historyList li { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+<div id="mainMenu">
+    <h1>Alphabet Peripheral Vision Test</h1>
+    <button onclick="showConfigModal()">New Test</button>
+    <button onclick="showHistory()">View History</button>
+    <button onclick="showSettings()">Settings</button>
+</div>
+
+<div id="configModal" class="modal">
+    <div class="modal-content">
+        <h2>Test Configuration</h2>
+        <div>
+            <label for="letterSize">Letter Size: <span id="letterSizeValue">20</span>px</label>
+            <input type="range" id="letterSize" min="20" max="200" step="5" value="20" oninput="updateLetterSize()">
+            <span id="sampleLetter" style="font-size: 20px;">A</span>
+        </div>
+        <div>
+            <label for="letterCount">Number of Letters: <span id="letterCountValue">26</span></label>
+            <input type="range" id="letterCount" min="5" max="26" value="26" oninput="updateLetterCount()">
+        </div>
+        <div>
+            <label for="exclusionRadius">Exclusion Radius: <span id="exclusionRadiusValue">0</span>px</label>
+            <input type="range" id="exclusionRadius" min="0" max="500" step="25" value="0" oninput="updateExclusionRadius()">
+        </div>
+        <div>
+            <label><input type="checkbox" id="highlightTarget"> Highlight Target Letter</label>
+        </div>
+        <div>
+            <label><input type="checkbox" id="enableMotion"> Enable Letter Motion</label>
+        </div>
+        <div>
+            <label><input type="checkbox" id="rotateLetters"> Rotate Letters 90° Counterclockwise</label>
+        </div>
+        <div>
+            <label><input type="checkbox" id="disappearAfterClick"> Make Letters Disappear After Correct Click</label>
+        </div>
+        <div>
+            <label for="motionSpeed">Motion Speed: <span id="motionSpeedValue">1</span></label>
+            <input type="range" id="motionSpeed" min="1" max="10" value="1" oninput="updateMotionSpeed()">
+        </div>
+        <button onclick="startTest()">Start Test</button>
+    </div>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="resultsModal" class="modal">
+    <div class="modal-content">
+        <h2>Test Results</h2>
+        <p>Time to complete: <span id="completionTime"></span> seconds</p>
+        <button onclick="showMainMenu()">Main Menu</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let letters = [];
+    let currentLetter = 'A';
+    let startTime, endTime;
+    let animationId;
+    let config = {
+        letterSize: 20,
+        letterCount: 26,
+        exclusionRadius: 0,
+        highlightTarget: false,
+        enableMotion: false,
+        rotateLetters: false,
+        disappearAfterClick: false,
+        motionSpeed: 1
+    };
+
+    function showConfigModal() {
+        document.getElementById('configModal').style.display = 'block';
+        document.getElementById('mainMenu').style.display = 'none';
+    }
+
+    function updateLetterSize() {
+        const size = document.getElementById('letterSize').value;
+        document.getElementById('letterSizeValue').textContent = size;
+        document.getElementById('sampleLetter').style.fontSize = `${size}px`;
+        config.letterSize = parseInt(size);
+    }
+
+    function updateLetterCount() {
+        const count = document.getElementById('letterCount').value;
+        document.getElementById('letterCountValue').textContent = count;
+        config.letterCount = parseInt(count);
+    }
+
+    function updateExclusionRadius() {
+        const radius = document.getElementById('exclusionRadius').value;
+        document.getElementById('exclusionRadiusValue').textContent = radius;
+        config.exclusionRadius = parseInt(radius);
+    }
+
+    function updateMotionSpeed() {
+        const speed = document.getElementById('motionSpeed').value;
+        document.getElementById('motionSpeedValue').textContent = speed;
+        config.motionSpeed = parseInt(speed);
+    }
+
+    function startTest() {
+        config.highlightTarget = document.getElementById('highlightTarget').checked;
+        config.enableMotion = document.getElementById('enableMotion').checked;
+        config.rotateLetters = document.getElementById('rotateLetters').checked;
+        config.disappearAfterClick = document.getElementById('disappearAfterClick').checked;
+
+        document.getElementById('configModal').style.display = 'none';
+        canvas.style.display = 'block';
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        letters = generateLetters();
+        currentLetter = 'A';
+        startTime = Date.now();
+        animate();
+    }
+
+    function generateLetters() {
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.slice(0, config.letterCount);
+        return alphabet.split('').map(letter => ({
+            letter,
+            x: Math.random() * (canvas.width - config.letterSize),
+            y: Math.random() * (canvas.height - config.letterSize),
+            visible: true
+        }));
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawCentralDot();
+        drawLetters();
+        if (config.enableMotion) moveLetters();
+        animationId = requestAnimationFrame(animate);
+    }
+
+    function drawCentralDot() {
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'black';
+        ctx.font = '20px Arial';
+        ctx.fillText(`Find ${currentLetter}`, canvas.width / 2 - 40, canvas.height / 2 - 20);
+    }
+
+    function drawLetters() {
+        letters.forEach(letter => {
+            if (letter.visible) {
+                ctx.save();
+                ctx.font = `${config.letterSize}px Arial`;
+                if (config.rotateLetters) {
+                    ctx.translate(letter.x + config.letterSize / 2, letter.y + config.letterSize / 2);
+                    ctx.rotate(-Math.PI / 2);
+                    ctx.translate(-config.letterSize / 2, -config.letterSize / 2);
+                } else {
+                    ctx.translate(letter.x, letter.y);
+                }
+                if (config.highlightTarget && letter.letter === currentLetter) {
+                    ctx.fillStyle = 'yellow';
+                    ctx.fillRect(0, 0, config.letterSize, config.letterSize);
+                }
+                ctx.fillStyle = 'black';
+                ctx.fillText(letter.letter, 0, config.letterSize);
+                ctx.restore();
+            }
+        });
+    }
+
+    function moveLetters() {
+        letters.forEach(letter => {
+            letter.x += (Math.random() - 0.5) * config.motionSpeed;
+            letter.y += (Math.random() - 0.5) * config.motionSpeed;
+            letter.x = Math.max(0, Math.min(canvas.width - config.letterSize, letter.x));
+            letter.y = Math.max(0, Math.min(canvas.height - config.letterSize, letter.y));
+        });
+    }
+
+    canvas.addEventListener('click', (e) => {
+        const clickedLetter = letters.find(letter =>
+            e.clientX >= letter.x && e.clientX <= letter.x + config.letterSize &&
+            e.clientY >= letter.y && e.clientY <= letter.y + config.letterSize &&
+            letter.letter === currentLetter && letter.visible
+        );
+
+        if (clickedLetter) {
+            if (config.disappearAfterClick) clickedLetter.visible = false;
+            currentLetter = String.fromCharCode(currentLetter.charCodeAt(0) + 1);
+            if (currentLetter > 'Z' || currentLetter.charCodeAt(0) - 'A'.charCodeAt(0) >= config.letterCount) {
+                endTest();
+            }
+        }
+    });
+
+    function endTest() {
+        cancelAnimationFrame(animationId);
+        endTime = Date.now();
+        const timeTaken = (endTime - startTime) / 1000;
+        document.getElementById('completionTime').textContent = timeTaken.toFixed(2);
+        canvas.style.display = 'none';
+        document.getElementById('resultsModal').style.display = 'block';
+        saveTestResult(timeTaken);
+    }
+
+    function saveTestResult(timeTaken) {
+        const result = { date: new Date().toISOString(), time: timeTaken, config: { ...config } };
+        const history = JSON.parse(localStorage.getItem('testHistory') || '[]');
+        history.push(result);
+        localStorage.setItem('testHistory', JSON.stringify(history));
+    }
+
+    function showHistory() {
+        const history = JSON.parse(localStorage.getItem('testHistory') || '[]');
+        const historyList = document.getElementById('historyList') || document.createElement('ul');
+        historyList.id = 'historyList';
+        historyList.innerHTML = '';
+        history.forEach((result, index) => {
+            const li = document.createElement('li');
+            li.textContent = `Test ${index + 1}: ${result.time.toFixed(2)}s - ${new Date(result.date).toLocaleString()}`;
+            const repeatButton = document.createElement('button');
+            repeatButton.textContent = 'Repeat';
+            repeatButton.onclick = () => repeatTest(result.config);
+            li.appendChild(repeatButton);
+            historyList.appendChild(li);
+        });
+        document.getElementById('mainMenu').appendChild(historyList);
+    }
+
+    function repeatTest(savedConfig) {
+        Object.assign(config, savedConfig);
+        updateConfigUI();
+        showConfigModal();
+    }
+
+    function updateConfigUI() {
+        document.getElementById('letterSize').value = config.letterSize;
+        document.getElementById('letterCount').value = config.letterCount;
+        document.getElementById('exclusionRadius').value = config.exclusionRadius;
+        document.getElementById('highlightTarget').checked = config.highlightTarget;
+        document.getElementById('enableMotion').checked = config.enableMotion;
+        document.getElementById('rotateLetters').checked = config.rotateLetters;
+        document.getElementById('disappearAfterClick').checked = config.disappearAfterClick;
+        document.getElementById('motionSpeed').value = config.motionSpeed;
+        updateLetterSize();
+        updateLetterCount();
+        updateExclusionRadius();
+        updateMotionSpeed();
+    }
+
+    function showSettings() {
+        alert('Settings functionality not implemented in this demo.');
+    }
+
+    function showMainMenu() {
+        document.getElementById('resultsModal').style.display = 'none';
+        document.getElementById('mainMenu').style.display = 'block';
+    }
+
+    window.addEventListener('resize', () => {
+        if (canvas.style.display !== 'none') {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+    });
+</script>
+</body>
+</html>
