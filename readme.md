@@ -1,4 +1,15 @@
-# How to use Claude as a PRD compiler
+# Peripheral Vision Test / Trainer
+
+[Click here to see the final product](https://gr-b.github.io/peripheral/peripheral-recognition/specification-extraction/alphabet-simplified-spec-v7-iteration-13.html)
+
+
+Recommended settings: 
+ - Letter size: 120
+ - Exclusion radius: 150
+ - "Make letters disappear after correct click": check
+
+
+# Experiments using Claude to compile specifications into code (rather than generate code once and successively edit)
 
 As a software engineer, I spend a lot of time staring at a fixed point in front of me, with my head angle fixed. I’ve heard that over time, this can cause a slow decline in peripheral vision. Rather than be a reasonable person and use any of the many perfectly good existing solutions for this, I decided to try my own hand at building one with Claude. So I typed out the following single prompt:
 
