@@ -9,7 +9,7 @@ Recommended settings:
  - "Make letters disappear after correct click": check
 
 
-# Experiments using Claude to compile specifications into code (rather than generate code once and successively edit)
+# LLMs are variable ambiguity, variable precision compilers
 
 As a software engineer, I spend a lot of time staring at a fixed point in front of me, with my head angle fixed. I’ve heard that over time, this can cause a slow decline in peripheral vision. Rather than be a reasonable person and use any of the many perfectly good existing solutions for this, I decided to try my own hand at building one with Claude. So I typed out the following single prompt:
 
